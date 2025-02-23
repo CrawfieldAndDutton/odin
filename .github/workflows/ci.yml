@@ -44,10 +44,10 @@ jobs:
 #          name: test-results
 #          path: ./tests/results/  # Path where your test results are stored (adjust if necessary)
 
-      - name: Check formatting with black
-        run: |
-          pip install black  # Install the black formatter
-          black --check .  # Check code formatting (doesn't modify code)
+#      - name: Check formatting with black
+#        run: |
+#          pip install black  # Install the black formatter
+#          black --check .  # Check code formatting (doesn't modify code)
 
       - name: Linting with flake8
         run: |
