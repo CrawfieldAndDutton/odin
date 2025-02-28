@@ -38,4 +38,4 @@ async def root():
     return {"message": f"{settings.PROJECT_NAME} v{settings.PROJECT_VERSION}"}
 
 # Include routers
-app.include_router(pan_validation.router, prefix="/api/v1",tags=["PAN Validation"])
+app.include_router(pan_validation.router, prefix="/api/v1", tags=["PAN Validation"])
