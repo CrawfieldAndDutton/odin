@@ -1,6 +1,5 @@
 import mongoengine as me
 from datetime import datetime
-import uuid
 
 
 class PANValidationResult(me.Document):
