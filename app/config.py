@@ -11,11 +11,10 @@ class Settings:
     PROJECT_VERSION: str = "1.0.0"
 
     # API Keys
-    PAN_API_KEY: str = os.getenv("PAN_API_KEY")  # type: ignore
+    PAN_API_KEY: str = os.getenv("PAN_API_KEY")
 
     # MongoDB Config
-    MONGODB_URI: str = os.getenv(
-        "MONGODB_URI", "mongodb://localhost:27017/pan_validation")
+    MONGODB_URI: str = os.getenv("MONGODB_URI")
 
     # API URLs
     PAN_VALIDATION_API_URL: str = "https://aitan-pan-verification-apis.p.rapidapi.com/validation/api/v1/pan-basic"

@@ -16,7 +16,7 @@ class PANResultDetail(BaseModel):
 class PANValidationResponse(BaseModel):
     txn_id: str
     status: str
-    message:str
+    message: str
     status_code: int
     result: PANResultDetail
 
