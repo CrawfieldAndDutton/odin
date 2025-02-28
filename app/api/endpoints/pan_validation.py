@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from app.schemas.pan_validation import (
     PANValidationRequest,
     PANValidationResponse,

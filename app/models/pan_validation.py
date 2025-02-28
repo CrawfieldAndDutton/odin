@@ -2,7 +2,6 @@ import mongoengine as me
 from datetime import datetime
 
 
-
 class PANValidationResult(me.Document):
     created_at = me.DateTimeField(default=datetime.utcnow)
     updated_at = me.DateTimeField(default=datetime.utcnow)
