@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from app.config import settings
 from app.core.database import connect_to_mongodb, close_mongodb_connection
 from app.api.endpoints import pan_validation
