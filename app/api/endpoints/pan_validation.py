@@ -6,6 +6,7 @@ from app.schemas.pan_validation import (
 )
 from app.services.pan_validation_service import PANValidationService
 
+
 router = APIRouter()
 
 
@@ -18,13 +19,10 @@ async def validate_pan(request: PANValidationRequest):
     cached_result = await PANValidationService.get_cached_validation(request.pan)
     if cached_result:
         return cached_result
-
     # Call external API
     result = await PANValidationService.call_external_api(request.pan)
-
     # Save result to database
     PANValidationService.save_validation_result(request.pan, result)
-
     return result
 
 
@@ -34,8 +32,6 @@ async def get_pan_history(pan: str):
     Get validation history for a specific PAN
     """
     history = await PANValidationService.get_pan_history(pan)
-
     if not history:
         return {"history": []}
-
     return {"history": history}

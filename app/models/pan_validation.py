@@ -13,7 +13,6 @@ class PANValidationResult(me.Document):
     pan_status = me.StringField()
     pan_type = me.StringField()
     full_name = me.StringField()
-
     meta = {
         'collection': 'pan_validation_results',
         'indexes': [
