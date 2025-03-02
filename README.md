@@ -29,15 +29,15 @@ This is a FastAPI-based project for KYC (Know Your Customer) verification. It in
 4. Create a .env
    environment variables:
    `properties
- RAPID_API_KEY=TOUR_API_KEY
- SECRET_KEY=your_secret_key
- REFRESH_SECRET_KEY=Your_refresh_key
- MONGO_URI="you_mongodb_url"
- MAIN_DB=kyc_fabric_db
- ALGORITHM=HS256
- ACCESS_TOKEN_EXPIRE_MINUTES=minutes
- REFRESH_TOKEN_EXPIRE_DAYS=days
- `
+RAPID_API_KEY=TOUR_API_KEY
+SECRET_KEY=your_secret_key
+REFRESH_SECRET_KEY=Your_refresh_key
+MONGO_URI="you_mongodb_url"
+MAIN_DB=kyc_fabric_db
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=minutes
+REFRESH_TOKEN_EXPIRE_DAYS=days
+`
 
 ## Running the Application
 
@@ -58,11 +58,19 @@ flake8 .
 # API Endpoints
 
 `GET /: Welcome message`
+
 `POST /auth/login: User login`
+
 `POST /auth/register: User registration`
+
 `POST /auth/refresh: Refresh access token`
+
 `POST /auth/logout : User Logout`
+
 `GET /users/me : Fetching active user's data`
+
 `PUT /users/me : For update user details`
+
 `POST api/pan/verify-pan: PAN verification`
+
 `GET api/vehicle/verify-vehicle: Vehicle RC verification`
