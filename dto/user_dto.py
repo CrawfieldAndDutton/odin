@@ -1,13 +1,13 @@
-from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     username: Optional[str] = None
     is_active: Optional[bool] = True
-    role: Optional[str] = "user"  # Added role field with default "user"
+    role: Optional[str] = "user"
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
@@ -25,7 +25,7 @@ class UserUpdate(UserBase):
 class UserInDBBase(UserBase):
     id: Optional[str] = Field(alias="_id")
     created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None  # Added updated_at field
+    updated_at: Optional[datetime] = None
 
     class Config:
         orm_mode = True

@@ -1,24 +1,34 @@
-from fastapi import FastAPI
-from mongoengine import connect
-from dependencies.config import Config, settings
 import secrets
-from routes.order_router import pan_router as pan_router
-from routes.order_router import vehicle_router as vehicle_router
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from mongoengine import connect
+from dependencies.config import Config
+from dependencies.middleware_log import log_middleware
 from routes.user_router import router as user_router
+from routes.kyc_router import pan_router, vehicle_router
 
 
 # Generate secret keys if not set
-if settings.SECRET_KEY == "YOUR_SECRET_KEY_HERE":
+if Config.SECRET_KEY == "YOUR_SECRET_KEY_HERE":
     print("WARNING: Using auto-generated SECRET_KEY.")
-    settings.SECRET_KEY = secrets.token_hex(32)
+    Config.SECRET_KEY = secrets.token_hex(32)
 
-if settings.REFRESH_SECRET_KEY == "YOUR_REFRESH_SECRET_KEY_HERE":
+if Config.REFRESH_SECRET_KEY == "YOUR_REFRESH_SECRET_KEY_HERE":
     print("WARNING: Using auto-generated REFRESH_SECRET_KEY.")
-    settings.REFRESH_SECRET_KEY = secrets.token_hex(32)
+    Config.REFRESH_SECRET_KEY = secrets.token_hex(32)
 
 # Initialize FastAPI app
 app = FastAPI(title="KYC Verification API")
+app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Need to Specify frontend domain in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 connect(
     db=Config.MAIN_DB,
@@ -29,7 +39,7 @@ connect(
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to odin!"}
+    return {"message": "Welcome to test!"}
 
 
 # Register routers

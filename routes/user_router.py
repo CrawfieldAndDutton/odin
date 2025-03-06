@@ -1,19 +1,18 @@
+from typing import Any
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import datetime, timedelta
-from typing import Any
-from mongoengine.errors import DoesNotExist
-
-from dependencies.config import settings
-from handlers.security import (
+from pytz import timezone
+from dependencies.logger import logger
+from dependencies.config import Config
+from dependencies.security import (
     create_access_token,
     create_refresh_token,
     verify_password,
     verify_refresh_token,
-    revoke_refresh_token,
-    get_password_hash
+    delete_refresh_token,
+    delete_all_user_tokens
 )
-from models.user_model import User as UserModel
 from dto.user_dto import (
     Token,
     TokenRefresh,
@@ -22,50 +21,47 @@ from dto.user_dto import (
     UserUpdate,
     RefreshTokenRequest
 )
-from handlers.exceptions import UserAlreadyExistsException
-from dependencies.dependency import get_current_active_user
+from dependencies.exceptions import UserAlreadyExistsException
+from handlers.auth_handlers import get_current_active_user, get_current_user
+from repositories.user_repository import UserRepository
+from models.user_model import User as UserModel
+
+
+ist = timezone('Asia/Kolkata')
+
 
 # Create a single router for all routes
 router = APIRouter()
 
-
 # Auth Routes
+
+
 @router.post("/auth/login", response_model=Token, tags=["Auth"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
     """
     Authenticate a user and return an access token and refresh token.
     """
-    try:
-        user = UserModel.objects.get(username=form_data.username)
-    except DoesNotExist:
+    user = UserRepository.get_user_by_username(form_data.username)
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        logger.error("Incorrect username or password")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    user.is_active = True
+    user.save()
 
-    # Create access token
-    access_token_expires = timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        subject=str(user.id), expires_delta=access_token_expires
-    )
-
-    # Create refresh token
+    access_token_expires = timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(subject=str(user.id), expires_delta=access_token_expires)
     refresh_token, expires_at = create_refresh_token(user_id=str(user.id))
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "expires_at": datetime.now() + access_token_expires
+        "expires_at": datetime.now(ist) + access_token_expires
     }
 
 
@@ -75,20 +71,16 @@ async def refresh_token(token_data: RefreshTokenRequest) -> TokenRefresh:
     Refresh an access token using a valid refresh token.
     """
     user_id = verify_refresh_token(token_data.refresh_token)
-
     if not user_id:
+        logger.exception("Invalid refresh token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create new access token
-    access_token_expires = timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        subject=user_id, expires_delta=access_token_expires
-    )
+    access_token_expires = timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(subject=user_id, expires_delta=access_token_expires)
 
     return {
         "access_token": access_token,
@@ -98,16 +90,12 @@ async def refresh_token(token_data: RefreshTokenRequest) -> TokenRefresh:
 
 
 @router.post("/auth/logout", tags=["Auth"])
-async def logout(token_data: RefreshTokenRequest):
-    """
-    Revoke a refresh token to log out the user.
-    """
-    success = revoke_refresh_token(token_data.refresh_token)
-
-    if not success:
-        return {"detail": "Token not found or already revoked"}
-
-    return {"detail": "Successfully logged out"}
+async def logout(token_data: RefreshTokenRequest, current_user: UserModel = Depends(get_current_user)):
+    delete_refresh_token(token_data.refresh_token)
+    delete_all_user_tokens(str(current_user.id))
+    current_user.is_active = False
+    current_user.save()
+    return {"detail": "Successfully logged out and all sessions terminated"}
 
 
 @router.post("/auth/register", response_model=User, status_code=status.HTTP_201_CREATED, tags=["Auth"])
@@ -115,45 +103,34 @@ async def register(user_data: UserCreate) -> User:
     """
     Register a new user.
     """
-    # Check if user already exists
-    existing_email = UserModel.objects(email=user_data.email).first()
-    if existing_email:
+    if UserRepository.get_user_by_email(user_data.email):
+        logger.info("User with this email already exists")
         raise UserAlreadyExistsException()
 
-    existing_username = UserModel.objects(username=user_data.username).first()
-    if existing_username:
+    if UserRepository.get_user_by_username(user_data.username):
+        logger.error("Username already registered")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered",
         )
 
-    # Create new user
-    user = UserModel(
-        email=user_data.email,
-        username=user_data.username,
-        hashed_password=get_password_hash(user_data.password),
-        first_name=user_data.first_name,
-        last_name=user_data.last_name,
-        # Set role, default to "user"
-        role=user_data.role if hasattr(user_data, 'role') else "user"
-    )
-    user.save()
+    user = UserRepository.create_user(user_data)
 
-    # Convert MongoDB document to Pydantic model
     return User(
         _id=str(user.id),
         email=user.email,
         username=user.username,
         is_active=user.is_active,
-        role=user.role,  # Include role in response
+        role=user.role,
         first_name=user.first_name,
         last_name=user.last_name,
         created_at=user.created_at,
-        updated_at=user.updated_at  # Include updated_at in response
+        updated_at=user.updated_at
     )
 
-
 # User Routes
+
+
 @router.get("/users/me", response_model=User, tags=["Fetch Users"])
 async def read_users_me(current_user: UserModel = Depends(get_current_active_user)) -> Any:
     """
@@ -178,26 +155,14 @@ async def update_user_me(
     """
     Update details of the currently authenticated user.
     """
-    # Update user fields
-    if user_data.email is not None:
-        current_user.email = user_data.email
-    if user_data.username is not None:
-        current_user.username = user_data.username
-    if user_data.first_name is not None:
-        current_user.first_name = user_data.first_name
-    if user_data.last_name is not None:
-        current_user.last_name = user_data.last_name
-    if user_data.password is not None:
-        current_user.hashed_password = get_password_hash(user_data.password)
-
-    current_user.save()
+    updated_user = UserRepository.update_user(current_user, user_data)
 
     return User(
-        _id=str(current_user.id),
-        email=current_user.email,
-        username=current_user.username,
-        is_active=current_user.is_active,
-        first_name=current_user.first_name,
-        last_name=current_user.last_name,
-        created_at=current_user.created_at
+        _id=str(updated_user.id),
+        email=updated_user.email,
+        username=updated_user.username,
+        is_active=updated_user.is_active,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        created_at=updated_user.created_at
     )

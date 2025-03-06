@@ -1,25 +1,27 @@
+import secrets
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union, Tuple
-
-from jose import jwt
+from pytz import timezone
 from passlib.context import CryptContext
-import secrets
-
-from dependencies.config import settings
+from jose import jwt
+from dependencies.config import Config
 from models.user_model import RefreshToken
+from dependencies.logger import logger
+# Define IST timezone
+ist = timezone('Asia/Kolkata')
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(ist) + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(ist) + timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
     encoded_jwt = jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        to_encode, Config.SECRET_KEY, algorithm=Config.ALGORITHM)
     return encoded_jwt
 
 
@@ -27,8 +29,8 @@ def create_refresh_token(user_id: str) -> Tuple[str, datetime]:
     # Create a secure random token
     token_value = secrets.token_hex(32)
 
-    # Set expiration date
-    expires_at = datetime.now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    # Set expiration date in IST
+    expires_at = datetime.now(ist) + timedelta(days=Config.REFRESH_TOKEN_EXPIRE_DAYS)
 
     # Create token in database
     refresh_token = RefreshToken(
@@ -46,7 +48,7 @@ def create_refresh_token(user_id: str) -> Tuple[str, datetime]:
         "type": "refresh"
     }
     encoded_jwt = jwt.encode(
-        to_encode, settings.REFRESH_SECRET_KEY, algorithm=settings.ALGORITHM)
+        to_encode, Config.REFRESH_SECRET_KEY, algorithm=Config.ALGORITHM)
 
     return encoded_jwt, expires_at
 
@@ -62,7 +64,7 @@ def get_password_hash(password: str) -> str:
 def verify_refresh_token(token: str) -> Optional[str]:
     try:
         payload = jwt.decode(
-            token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, Config.REFRESH_SECRET_KEY, algorithms=[Config.ALGORITHM]
         )
 
         if payload.get("type") != "refresh":
@@ -79,7 +81,7 @@ def verify_refresh_token(token: str) -> Optional[str]:
             token=jti,
             user_id=user_id,
             revoked=False,
-            expires_at__gt=datetime.utcnow()
+            expires_at__gt=datetime.now(ist)  # Use IST timezone
         ).first()
 
         if not stored_token:
@@ -88,27 +90,35 @@ def verify_refresh_token(token: str) -> Optional[str]:
         return user_id
 
     except jwt.JWTError:
+        logger.exception("Error decoding refresh token")
         return None
 
 
-def revoke_refresh_token(token: str) -> bool:
+def delete_refresh_token(token: str) -> bool:
+    """Delete a refresh token from the database"""
     try:
         payload = jwt.decode(
-            token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, Config.REFRESH_SECRET_KEY, algorithms=[Config.ALGORITHM]
         )
 
         jti = payload.get("jti")
-        if not jti:
+        user_id = payload.get("sub")
+        if not jti or not user_id:
             return False
 
-        # Find and revoke the token
-        stored_token = RefreshToken.objects(token=jti).first()
-        if stored_token:
-            stored_token.revoked = True
-            stored_token.save()
-            return True
-
-        return False
+        # Find and delete the token
+        result = RefreshToken.objects(token=jti).delete()
+        return result > 0
 
     except jwt.JWTError:
+        logger.exception("Error decoding refresh token")
         return False
+
+
+def delete_all_user_tokens(user_id: str) -> bool:
+    """Delete all refresh tokens for a specific user"""
+    result = RefreshToken.objects(
+        user_id=user_id,
+        expires_at__gt=datetime.now(ist)
+    ).delete()
+    return result > 0

@@ -9,7 +9,7 @@ bcrypt==4.0.1
 email-validator==2.0.0
 python-jose==3.3.0
 passlib==1.7.4
-pymongo==4.3.3
 python-multipart==0.0.6
 logging==0.4.9.6
-flake8
+flake8==7.1.2
+pytz==2025.1
