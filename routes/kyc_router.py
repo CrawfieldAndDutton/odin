@@ -2,22 +2,20 @@ from fastapi import APIRouter, Depends, Request
 from typing import Union
 from fastapi.responses import JSONResponse
 from models.user_model import User as UserModel
-from dto.kyc_dto import PanVerificationRequest, PanVerificationResponse
-from dto.kyc_dto import VehicleVerificationRequest, VehicleVerificationResponse
-from handlers.auth_handlers import get_current_active_user
+from dto.kyc_dto import PanVerificationRequest, APISuccessResponse, VehicleVerificationRequest
+from handlers.auth_handlers import AuthHandler
 from handlers.pan_handler import PanHandler
 from handlers.rc_handler import RCHandler
 
-pan_router = APIRouter(prefix="/api/v1", tags=["PAN Verification API"])
-vehicle_router = APIRouter(prefix="/api/v1", tags=["RC Verification API"])
+kyc_router = APIRouter(prefix="/api/v1", tags=["KYC Verification API"])
 
 
-@pan_router.post("/pan/verify", response_model=PanVerificationResponse)
+@kyc_router.post("/pan/verify", response_model=APISuccessResponse)
 async def verify_pan(
     request: PanVerificationRequest,
     fastapi_request: Request,
-    user: UserModel = Depends(get_current_active_user)
-) -> Union[PanVerificationResponse, JSONResponse]:
+    user: UserModel = Depends(AuthHandler.get_current_active_user)
+) -> Union[APISuccessResponse, JSONResponse]:
     """
     Verify PAN details.
 
@@ -32,12 +30,12 @@ async def verify_pan(
     return await PanHandler.verify_pan(request, fastapi_request, str(user.id))
 
 
-@vehicle_router.post("/rc/verify", response_model=VehicleVerificationResponse)
+@kyc_router.post("/rc/verify", response_model=APISuccessResponse)
 async def verify_vehicle(
     request: VehicleVerificationRequest,
     fastapi_request: Request,
-    user: UserModel = Depends(get_current_active_user)
-) -> Union[VehicleVerificationResponse, JSONResponse]:
+    user: UserModel = Depends(AuthHandler.get_current_active_user)
+) -> Union[APISuccessResponse, JSONResponse]:
     """
     Verify vehicle registration details.
 

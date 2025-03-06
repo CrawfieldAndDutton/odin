@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from dependencies.logger import logger
 from models.kyc_model import KYCValidationTransaction
-from dto.kyc_dto import PanVerificationRequest, PanVerificationResponse
+from dto.kyc_dto import PanVerificationRequest, APISuccessResponse
 from repositories.kyc_repository import KYCRepository
 from services.aitan_services import PanService
 
@@ -15,7 +15,7 @@ class PanHandler:
         request: PanVerificationRequest,
         fastapi_request: Request,
         user_id: str
-    ) -> JSONResponse | PanVerificationResponse:
+    ) -> JSONResponse | APISuccessResponse:
         pan = request.pan
         start_time = datetime.now()
 
@@ -31,7 +31,8 @@ class PanHandler:
 
         try:
             logger.info(f"No cached record found for PAN {pan}. Calling external API.")
-            response, external_response, tat = await PanService.call_external_api(pan, fastapi_request, user_id)
+            response, tat = await PanService.call_external_api(pan, fastapi_request, user_id)
+            external_response = response.json()
             status = PanHandler._determine_status(response, external_response)
             transaction = PanHandler._create_transaction(
                 response, tat, status, user_id, fastapi_request,
@@ -53,7 +54,7 @@ class PanHandler:
                 )
 
             logger.info(f"Returning successful PAN verification response for user {user_id}")
-            return PanVerificationResponse(
+            return APISuccessResponse(
                 http_status_code=response.status_code,
                 message="Success",
                 result=external_response,
@@ -70,7 +71,7 @@ class PanHandler:
         user_id: str,
         fastapi_request: Request,
         tat: float
-    ) -> JSONResponse | PanVerificationResponse:
+    ) -> JSONResponse | APISuccessResponse:
         if cached_record.http_status_code == 200:
             if cached_record.kyc_provider_response.get("status_code") == 100:
                 status = "FOUND"
@@ -115,7 +116,7 @@ class PanHandler:
                     "error": cached_record.message}
             )
         logger.info(f"Returning cached PAN verification result for user {user_id}")
-        return PanVerificationResponse(
+        return APISuccessResponse(
             http_status_code=cached_record.http_status_code,
             message="Success",
             result=cached_record.kyc_provider_response,

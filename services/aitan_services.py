@@ -3,10 +3,36 @@ from typing import Dict, Any, Tuple
 from datetime import datetime
 from fastapi import Request
 from requests.models import Response
-from dependencies.constants import VEHICLE_HEADERS, VEHICLE_PAYLOAD
+from dependencies.constants import VEHICLE_HEADERS, VEHICLE_PAYLOAD, PAN_HEADERS, PAN_PAYLOAD
 from dependencies.config import Config
-from dependencies.constants import PAN_HEADERS, PAN_PAYLOAD
 from dependencies.logger import logger
+
+
+def calculate_tat(start_time: datetime, end_time: datetime) -> float:
+    """Calculate turnaround time in seconds."""
+    return (end_time - start_time).total_seconds()
+
+
+def call_external_api(url: str, headers: Dict[str, str], payload: Dict[str, Any]) -> Tuple[Response, float]:
+    """
+    Generic function to call an external API and calculate turnaround time.
+
+    Args:
+        url: The API URL to call.
+        headers: The headers to include in the request.
+        payload: The payload to send in the request.
+
+    Returns:
+        Tuple containing:
+            - Response object
+            - Turn around time in seconds
+    """
+    start_time = datetime.now()
+    logger.info(f"Calling external API: {url}")
+    response = requests.post(url, json=payload, headers=headers)
+    end_time = datetime.now()
+    tat = calculate_tat(start_time, end_time)
+    return response, tat
 
 
 class PanService:
@@ -15,7 +41,7 @@ class PanService:
         pan: str,
         fastapi_request: Request,
         user_id: str
-    ) -> Tuple[Response, Dict[str, Any], float]:
+    ) -> Tuple[Response, float]:
         """
         Call external API for PAN verification.
 
@@ -27,17 +53,10 @@ class PanService:
         Returns:
             Tuple containing:
                 - Response object
-                - Parsed JSON response as dictionary
                 - Turn around time in seconds
         """
         payload = {**PAN_PAYLOAD, "pan": pan}
-        start_time = datetime.now()
-        logger.info(f"Calling external API for PAN verification: {Config.EXTERNAL_API_URL_PAN}")
-        response = requests.post(Config.EXTERNAL_API_URL_PAN, json=payload, headers=PAN_HEADERS)
-        end_time = datetime.now()
-        tat = (end_time - start_time).total_seconds()
-        external_response = response.json()
-        return response, external_response, tat
+        return call_external_api(Config.EXTERNAL_API_URL_PAN, PAN_HEADERS, payload)
 
 
 class RCService:
@@ -46,7 +65,7 @@ class RCService:
         reg_no: str,
         fastapi_request: Request,
         user_id: str
-    ) -> Tuple[Response, Dict[str, Any], float]:
+    ) -> Tuple[Response, float]:
         """
         Call external API for vehicle registration verification.
 
@@ -58,14 +77,7 @@ class RCService:
         Returns:
             Tuple containing:
                 - Response object
-                - Parsed JSON response as dictionary
                 - Turn around time in seconds
         """
         payload = {**VEHICLE_PAYLOAD, "reg_no": reg_no}
-        start_time = datetime.now()
-        logger.info(f"Calling external API for Vehicle verification: {Config.EXTERNAL_API_URL_VEHICLE}")
-        response = requests.post(Config.EXTERNAL_API_URL_VEHICLE, json=payload, headers=VEHICLE_HEADERS)
-        end_time = datetime.now()
-        tat = (end_time - start_time).total_seconds()
-        external_response = response.json()
-        return response, external_response, tat
+        return call_external_api(Config.EXTERNAL_API_URL_VEHICLE, VEHICLE_HEADERS, payload)

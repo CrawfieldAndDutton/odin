@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from dependencies.logger import logger
 from models.kyc_model import KYCValidationTransaction
-from dto.kyc_dto import VehicleVerificationRequest, VehicleVerificationResponse
+from dto.kyc_dto import VehicleVerificationRequest, APISuccessResponse
 from repositories.kyc_repository import KYCRepository
 from services.aitan_services import RCService
 
@@ -15,7 +15,7 @@ class RCHandler:
         request: VehicleVerificationRequest,
         fastapi_request: Request,
         user_id: str
-    ) -> Union[VehicleVerificationResponse, JSONResponse]:
+    ) -> Union[APISuccessResponse, JSONResponse]:
         """
         Verify vehicle using registration number.
 
@@ -45,7 +45,8 @@ class RCHandler:
 
         try:
             logger.info(f"Calling external API for reg_no {reg_no}")
-            response, external_response, tat = await RCService.call_external_api(reg_no, fastapi_request, user_id)
+            response, tat = await RCService.call_external_api(reg_no, fastapi_request, user_id)
+            external_response = response.json()
             logger.info(f"External API response received with status code {response.status_code} in {tat} seconds")
 
             status = RCHandler._determine_status(response)
@@ -80,7 +81,7 @@ class RCHandler:
                 logger.info(f"Error response content: {error_response.body}")
                 return error_response
             logger.info(f"Returning successful vehicle verification response for user {user_id}")
-            success_response = VehicleVerificationResponse(
+            success_response = APISuccessResponse(
                 http_status_code=response.status_code,
                 message="Success",
                 result=external_response.get("result", {}),
@@ -99,7 +100,7 @@ class RCHandler:
         user_id: str,
         fastapi_request: Request,
         tat: float
-    ) -> Union[VehicleVerificationResponse, JSONResponse]:
+    ) -> Union[APISuccessResponse, JSONResponse]:
         """
         Handle cached vehicle record.
 
@@ -175,7 +176,7 @@ class RCHandler:
             return error_response
 
         logger.info(f"Returning cached successful response for user {user_id}")
-        success_response = VehicleVerificationResponse(
+        success_response = APISuccessResponse(
             http_status_code=cached_record.http_status_code,
             message="Success",
             result=cached_record.kyc_provider_response.get("result", {}),

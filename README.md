@@ -4,7 +4,6 @@ This is a FastAPI-based project for KYC (Know Your Customer) verification. It in
 
 ![Screenshot (428)](https://github.com/user-attachments/assets/548b19f4-b737-4b12-b6f2-4f214f188317)
 
-
 ## Project Structure
 
 ## Setup
@@ -74,6 +73,6 @@ flake8 .
 
 `PUT /users/me : For update user details`
 
-`POST api/pan/verify-pan: PAN verification`
+`POST api/v1/pan/verify: PAN verification`
 
-`GET api/vehicle/verify-vehicle: Vehicle RC verification`
+`GET api/v1/rc/verify: Vehicle RC verification`
