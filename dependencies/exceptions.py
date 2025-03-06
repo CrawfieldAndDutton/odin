@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from dependencies.logger import logger
 
 
 class CredentialsException(HTTPException):
