@@ -11,12 +11,7 @@ VEHICLE_HEADERS = {
     "x-rapidapi-key": Config.RAPID_API_KEY,
 }
 
-PAN_PAYLOAD = {
-    "consent": "yes",
-    "consent_text": "I hereby declare my consent agreement for fetching my information via AITAN Labs API",
-}
-
-VEHICLE_PAYLOAD = {
+AITAN_CONSENT_PAYLOAD = {
     "consent": "yes",
     "consent_text": "I hereby declare my consent agreement for fetching my information via AITAN Labs API",
 }

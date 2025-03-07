@@ -10,10 +10,27 @@ class PasswordUtils:
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a password."""
+        """
+        Verify a plain password against a hashed password.
+
+        Args:
+            plain_password: The plain text password to verify.
+            hashed_password: The hashed password to compare against.
+
+        Returns:
+            bool: True if the plain password matches the hashed password, False otherwise.
+        """
         return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
     def get_password_hash(password: str) -> str:
-        """Hash a password."""
+        """
+        Generate a hash for a given password.
+
+        Args:
+            password: The plain text password to hash.
+
+        Returns:
+            str: The hashed password.
+        """
         return pwd_context.hash(password)

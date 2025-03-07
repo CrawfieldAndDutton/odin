@@ -5,9 +5,11 @@ from typing import Optional
 from mongoengine.errors import DoesNotExist
 
 # Local application imports
-from models.user_model import User as UserModel
-from dto.user_dto import UserCreate, UserUpdate
 from dependencies.password_utils import PasswordUtils
+
+from dto.user_dto import UserCreate, UserUpdate
+
+from models.user_model import User as UserModel
 
 
 class UserRepository:

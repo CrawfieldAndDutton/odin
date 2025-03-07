@@ -10,6 +10,7 @@ from mongoengine import connect
 # Local application imports
 from dependencies.config import Config
 from dependencies.middleware_log import log_middleware
+
 from routes.user_router import auth_router
 from routes.kyc_router import kyc_router
 

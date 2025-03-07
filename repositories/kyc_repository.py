@@ -23,6 +23,7 @@ class KYCRepository:
             api_name=api_name,
             kyc_transaction_details__reg_no=detail["reg_no"],
             user_id=user_id,
+            is_cached=True,
         ).first()
 
     @staticmethod
@@ -42,6 +43,7 @@ class KYCRepository:
             api_name=api_name,
             kyc_transaction_details__pan=detail["pan"],
             user_id=user_id,
+            is_cached=True,
         ).first()
 
     @staticmethod

@@ -3,14 +3,17 @@ from datetime import datetime
 from typing import Dict, Any, Optional, Union
 
 # Third-party library imports
-from fastapi import Request
 from fastapi.responses import JSONResponse
 
 # Local application imports
 from dependencies.logger import logger
-from models.kyc_model import KYCValidationTransaction
+
 from dto.kyc_dto import VehicleVerificationRequest, APISuccessResponse
+
+from models.kyc_model import KYCValidationTransaction
+
 from repositories.kyc_repository import KYCRepository
+
 from services.aitan_services import RCService
 
 
@@ -18,7 +21,6 @@ class RCHandler:
     @staticmethod
     async def verify_vehicle(
         request: VehicleVerificationRequest,
-        fastapi_request: Request,
         user_id: str
     ) -> Union[APISuccessResponse, JSONResponse]:
         """
@@ -26,7 +28,6 @@ class RCHandler:
 
         Args:
             request: Vehicle verification request containing registration number
-            fastapi_request: FastAPI request object
             user_id: ID of the user making the request
 
         Returns:
@@ -46,11 +47,11 @@ class RCHandler:
             end_time = datetime.now()
             tat = (end_time - start_time).total_seconds()
             logger.info(f"Cache TAT: {tat} seconds")
-            return RCHandler._handle_cached_record(cached_record, reg_no, user_id, fastapi_request, tat)
+            return RCHandler._handle_cached_record(cached_record, reg_no, user_id, tat)
 
         try:
             logger.info(f"Calling external API for reg_no {reg_no}")
-            response, tat = await RCService.call_external_api(reg_no, fastapi_request, user_id)
+            response, tat = await RCService.call_external_api(reg_no)
             external_response = response.json()
             logger.info(f"External API response received with status code {response.status_code} in {tat} seconds")
 
@@ -58,7 +59,7 @@ class RCHandler:
             logger.info(f"Determined status: {status}")
 
             transaction = RCHandler._create_transaction(
-                response, tat, status, user_id, fastapi_request, {"reg_no": reg_no}, external_response, is_cached=False
+                response, tat, status, user_id,  {"reg_no": reg_no}, external_response, is_cached=True
             )
             logger.info(f"Created transaction: {transaction}")
             transaction.save()
@@ -96,14 +97,13 @@ class RCHandler:
 
         except Exception as e:
             logger.error(f"Exception occurred during vehicle verification: {str(e)}", exc_info=True)
-            return RCHandler._handle_exception(e, reg_no, user_id, fastapi_request)
+            return RCHandler._handle_exception(e, reg_no, user_id)
 
     @staticmethod
     def _handle_cached_record(
         cached_record: Any,
         reg_no: str,
         user_id: str,
-        fastapi_request: Request,
         tat: float
     ) -> Union[APISuccessResponse, JSONResponse]:
         """
@@ -113,7 +113,6 @@ class RCHandler:
             cached_record: Cached record from database
             reg_no: Vehicle registration number
             user_id: ID of the user making the request
-            fastapi_request: FastAPI request object
             tat: Turn around time in seconds
 
         Returns:
@@ -137,7 +136,7 @@ class RCHandler:
         transaction = KYCValidationTransaction(
             api_name="RC_V1",
             provider_name="INTERNAL",
-            is_cached=True,
+            is_cached=False,
             tat=tat,
             http_status_code=cached_record.http_status_code,
             status=status,
@@ -145,11 +144,6 @@ class RCHandler:
             kyc_transaction_details={"reg_no": reg_no},
             kyc_provider_request=cached_record.kyc_provider_request,
             kyc_provider_response=cached_record.kyc_provider_response,
-            kyc_validation_transactions_logs={
-                "ip": fastapi_request.client.host,
-                "user_agent": fastapi_request.headers.get("user-agent"),
-                "user_id": user_id,
-            },
             user_id=user_id,
         )
 
@@ -216,10 +210,9 @@ class RCHandler:
         tat: float,
         status: str,
         user_id: str,
-        fastapi_request: Request,
         payload: Optional[Dict[str, Any]] = None,
         external_response: Optional[Dict[str, Any]] = None,
-        is_cached: bool = False
+        is_cached: bool = True
     ) -> KYCValidationTransaction:
         """
         Create KYC validation transaction.
@@ -229,15 +222,14 @@ class RCHandler:
             tat: Turn around time in seconds
             status: Transaction status
             user_id: ID of the user making the request
-            fastapi_request: FastAPI request object
             payload: Request payload
             external_response: External API response
-            is_cached: Whether the response is from cache
+            is_cached: when the record is cached is True, otherwise False
 
         Returns:
             KYCValidationTransaction object
         """
-        provider_name = "INTERNAL" if is_cached else "AITAN"
+        provider_name = "AITAN" if is_cached else "INTERNAL"
         logger.info(f"Creating transaction with provider {provider_name}, status {status}, TAT {tat}s")
 
         if payload is None:
@@ -254,11 +246,6 @@ class RCHandler:
             kyc_transaction_details={"reg_no": payload.get("reg_no", "")},
             kyc_provider_request=payload,
             kyc_provider_response=external_response,
-            kyc_validation_transactions_logs={
-                "ip": fastapi_request.client.host,
-                "user_agent": fastapi_request.headers.get("user-agent"),
-                "user_id": user_id,
-            },
             user_id=user_id,
         )
 
@@ -270,7 +257,6 @@ class RCHandler:
         e: Exception,
         reg_no: str,
         user_id: str,
-        fastapi_request: Request
     ) -> JSONResponse:
         """
         Handle exceptions during vehicle verification.
@@ -279,7 +265,6 @@ class RCHandler:
             e: Exception object
             reg_no: Vehicle registration number
             user_id: ID of the user making the request
-            fastapi_request: FastAPI request object
 
         Returns:
             JSONResponse with error details
@@ -298,11 +283,6 @@ class RCHandler:
             kyc_transaction_details={"reg_no": reg_no},
             kyc_provider_request={"reg_no": reg_no},
             kyc_provider_response={},
-            kyc_validation_transactions_logs={
-                "ip": fastapi_request.client.host,
-                "user_agent": fastapi_request.headers.get("user-agent"),
-                "user_id": user_id,
-            },
             user_id=user_id,
         )
 

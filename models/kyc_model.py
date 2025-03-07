@@ -21,37 +21,17 @@ class KYCValidationTransaction(Document):
 
     # API and Provider Details
     api_name = StringField(required=True, choices=["PAN", "RC_V1"])  # PAN or RC
-    provider_name = StringField(required=True, choices=[
-                                "AITAN", "INTERNAL"])
+    provider_name = StringField(required=True, choices=["AITAN", "INTERNAL"])
     is_cached = BooleanField(default=False)
-
-    # Performance Metrics
     tat = FloatField()  # Turnaround time (time taken for API to respond)
-    # HTTP status code from the external API or internal response
     http_status_code = IntField()
-
-    # Status and Message
-    # Status of the transaction
-    status = StringField(required=True, choices=[
-                         "FOUND", "NOT_FOUND", "BAD_REQUEST", "TOO_MANY_REQUESTS", "ERROR"])
+    status = StringField(required=True, choices=["FOUND", "NOT_FOUND", "BAD_REQUEST", "TOO_MANY_REQUESTS", "ERROR"])
     message = StringField()
-
-    # Transaction Details
-    # Store user inputs (e.g., PAN, vehicle registration number)
-    kyc_transaction_details = DictField()
+    kyc_transaction_details = DictField()  # Store user inputs (e.g., PAN, vehicle registration number)
     kyc_provider_request = DictField()  # Request payload sent to the provider
     kyc_provider_response = DictField()  # Raw response received from the provider
-
-    # Transaction Logs
-    # Logs for user requests (IP, user_agent, user_id, etc.)
-    kyc_validation_transactions_logs = DictField()
-
-    # User Details
     user_id = StringField(required=True)
-
-    # Timestamps
     created_at = DateTimeField(default=lambda: datetime.now(ist))
-
     updated_at = DateTimeField(default=lambda: datetime.now(ist))
 
     # Meta Configuration
