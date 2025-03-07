@@ -2,11 +2,11 @@
 from passlib.context import CryptContext
 
 # Password context for hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class PasswordUtils:
     """Utility functions for password hashing and verification."""
+    PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -20,7 +20,7 @@ class PasswordUtils:
         Returns:
             bool: True if the plain password matches the hashed password, False otherwise.
         """
-        return pwd_context.verify(plain_password, hashed_password)
+        return PasswordUtils.PWD_CONTEXT.verify(plain_password, hashed_password)
 
     @staticmethod
     def get_password_hash(password: str) -> str:
@@ -33,4 +33,4 @@ class PasswordUtils:
         Returns:
             str: The hashed password.
         """
-        return pwd_context.hash(password)
+        return PasswordUtils.PWD_CONTEXT.hash(password)
