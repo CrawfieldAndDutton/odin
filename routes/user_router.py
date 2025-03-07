@@ -1,18 +1,21 @@
+# Standard library imports
 from typing import Any
+
+# Third-party library imports
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+# Local application imports
 from dto.user_dto import (
     Token,
     TokenRefresh,
     User,
     UserCreate,
     UserUpdate,
-    RefreshTokenRequest
+    RefreshTokenRequest,
 )
 from handlers.auth_handlers import AuthHandler
 from models.user_model import User as UserModel
-
 
 # Create a single router for all routes
 auth_router = APIRouter()

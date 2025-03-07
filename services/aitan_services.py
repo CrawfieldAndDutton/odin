@@ -1,8 +1,13 @@
-import requests
-from typing import Dict, Any, Tuple
+# Standard library imports
 from datetime import datetime
+from typing import Dict, Any, Tuple
+
+# Third-party library imports
+import requests
 from fastapi import Request
 from requests.models import Response
+
+# Local application imports
 from dependencies.constants import VEHICLE_HEADERS, VEHICLE_PAYLOAD, PAN_HEADERS, PAN_PAYLOAD
 from dependencies.config import Config
 from dependencies.logger import logger

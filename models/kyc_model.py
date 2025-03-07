@@ -1,6 +1,16 @@
+# Standard library imports
 from datetime import datetime
-from mongoengine import Document, StringField, BooleanField, FloatField
-from mongoengine import IntField, DictField, DateTimeField
+
+# Third-party library imports
+from mongoengine import (
+    Document,
+    StringField,
+    BooleanField,
+    FloatField,
+    IntField,
+    DictField,
+    DateTimeField,
+)
 from pytz import timezone
 
 # Define IST timezone

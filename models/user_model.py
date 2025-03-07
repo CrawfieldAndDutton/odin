@@ -1,4 +1,7 @@
+# Standard library imports
 from datetime import datetime
+
+# Third-party library imports
 import mongoengine as me
 from pytz import timezone
 

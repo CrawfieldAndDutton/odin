@@ -1,4 +1,7 @@
+# Standard library imports
 import os
+
+# Third-party library imports
 from dotenv import load_dotenv
 
 load_dotenv()

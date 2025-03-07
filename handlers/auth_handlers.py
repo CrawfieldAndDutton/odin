@@ -1,13 +1,16 @@
+# Standard library imports
 from datetime import datetime, timedelta
 import secrets
 from typing import Any, Optional, Union, Tuple, Dict
 
+# Third-party library imports
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from mongoengine.errors import DoesNotExist
 from pytz import timezone
 
+# Local application imports
 from dependencies.logger import logger
 from dependencies.config import Config as settings
 from repositories.user_repository import UserRepository

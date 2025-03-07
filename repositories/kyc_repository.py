@@ -1,4 +1,7 @@
+# Standard library imports
 from typing import Optional
+
+# Local application imports
 from models.kyc_model import KYCValidationTransaction
 
 

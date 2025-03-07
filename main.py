@@ -1,7 +1,13 @@
+# Standard library imports
+# (None in this case)
+
+# Third-party library imports
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from mongoengine import connect
+
+# Local application imports
 from dependencies.config import Config
 from dependencies.middleware_log import log_middleware
 from routes.user_router import auth_router

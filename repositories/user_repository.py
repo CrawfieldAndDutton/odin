@@ -1,5 +1,10 @@
+# Standard library imports
 from typing import Optional
+
+# Third-party library imports
 from mongoengine.errors import DoesNotExist
+
+# Local application imports
 from models.user_model import User as UserModel
 from dto.user_dto import UserCreate, UserUpdate
 from dependencies.password_utils import PasswordUtils

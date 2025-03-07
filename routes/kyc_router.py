@@ -1,6 +1,11 @@
-from fastapi import APIRouter, Depends, Request
+# Standard library imports
 from typing import Union
+
+# Third-party library imports
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
+
+# Local application imports
 from models.user_model import User as UserModel
 from dto.kyc_dto import PanVerificationRequest, APISuccessResponse, VehicleVerificationRequest
 from handlers.auth_handlers import AuthHandler

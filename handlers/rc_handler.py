@@ -1,7 +1,12 @@
+# Standard library imports
 from datetime import datetime
 from typing import Dict, Any, Optional, Union
+
+# Third-party library imports
 from fastapi import Request
 from fastapi.responses import JSONResponse
+
+# Local application imports
 from dependencies.logger import logger
 from models.kyc_model import KYCValidationTransaction
 from dto.kyc_dto import VehicleVerificationRequest, APISuccessResponse

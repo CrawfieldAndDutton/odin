@@ -1,5 +1,10 @@
+# Standard library imports
 import time
+
+# Third-party library imports
 from fastapi import Request
+
+# Local application imports
 from dependencies.logger import logger
 
 

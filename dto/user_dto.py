@@ -1,5 +1,8 @@
+# Standard library imports
 from typing import Optional
 from datetime import datetime
+
+# Standard library imports
 from pydantic import BaseModel, EmailStr, Field
 
 

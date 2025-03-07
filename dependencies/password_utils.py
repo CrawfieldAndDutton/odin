@@ -1,3 +1,4 @@
+# Third-party library imports
 from passlib.context import CryptContext
 
 # Password context for hashing
