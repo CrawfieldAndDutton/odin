@@ -8,6 +8,7 @@ from mongoengine import (
     BooleanField,
     EmailField,
     DateTimeField,
+    FloatField,
 )
 from pytz import timezone
 
@@ -23,6 +24,7 @@ class User(Document):
     last_name = StringField()
     role = StringField(default="user", choices=["user", "admin"])
     is_active = BooleanField(default=True)
+    credits = FloatField(default=0.0)
     created_at = DateTimeField(default=lambda: datetime.now(ist))
     updated_at = DateTimeField(default=lambda: datetime.now(ist))
 
