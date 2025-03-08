@@ -18,6 +18,7 @@ ist = timezone('Asia/Kolkata')
 
 
 class APIClient(Document):
+    user_id = StringField(required=True)
     client_id = StringField(required=True, unique=True)
     client_secret = StringField(required=True)
     is_enabled = BooleanField(default=True)

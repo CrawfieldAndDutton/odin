@@ -1,10 +1,11 @@
 # Standard library imports
 from datetime import datetime, timedelta
 import secrets
+import base64
 from typing import Any, Optional, Union, Tuple, Dict
 
 # Third-party library imports
-from fastapi import Depends, HTTPException, status, security
+from fastapi import Depends, HTTPException, status, security, Header
 from jose import jwt, JWTError
 from mongoengine.errors import DoesNotExist
 from pytz import timezone
@@ -18,8 +19,10 @@ from dependencies.exceptions import CredentialsException, UserNotFoundException,
 from dto.user_dto import TokenPayload, UserCreate, UserUpdate, Token, TokenRefresh, User, RefreshTokenRequest
 
 from repositories.user_repository import UserRepository
+from repositories.api_client_repository import APIClientRepository
 
 from models.user_model import User as UserModel, RefreshToken
+from models.api_client_model import APIClient as APIClientModel
 
 ist = timezone('Asia/Kolkata')
 
@@ -415,3 +418,65 @@ class AuthHandler:
             created_at=updated_user.created_at,
             updated_at=updated_user.updated_at
         )
+
+    @staticmethod
+    def get_current_client(token: str) -> UserModel:
+        """
+        Retrieve the associated user from the BasicAuth token.
+
+        Args:
+            token: BasicAuth token provided in the request header.
+
+        Returns:
+            UserModel: The associated user.
+
+        Raises:
+            CredentialsException: If the token is invalid or client not found.
+        """
+        try:
+            # Decode BasicAuth token
+            credentials = base64.b64decode(token.split(" ")[1]).decode("utf-8")
+            client_id, client_secret = credentials.split(":")
+            
+            # Get API client
+            api_client = APIClientModel.objects.get(client_id=client_id)
+            if not api_client:
+                logger.error("API client not found")
+                raise CredentialsException()
+            
+            # Verify client secret
+            if api_client.client_secret != client_secret:
+                logger.error("Invalid client secret")
+                raise CredentialsException()
+            
+            # Check if client is enabled
+            if not api_client.is_enabled:
+                logger.error("API client is disabled")
+                raise CredentialsException()
+            
+            # Get associated user
+            user = APIClientRepository.get_api_client(client_id)
+            if not user:
+                logger.error("Associated user not found")
+                raise CredentialsException()
+            
+            return user
+        except Exception as e:
+            logger.exception(f"Unexpected error in get_current_client: {str(e)}")
+            raise CredentialsException()
+
+    @staticmethod
+    async def get_api_client(authorization: str = Header(...)) -> UserModel:
+        """
+        Dependency to get the associated user from the Authorization header.
+
+        Args:
+            authorization: The Authorization header containing the BasicAuth token.
+
+        Returns:
+            UserModel: The associated user.
+
+        Raises:
+            CredentialsException: If the token is invalid or client not found.
+        """
+        return AuthHandler.get_current_client(authorization)
