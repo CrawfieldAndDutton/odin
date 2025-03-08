@@ -27,4 +27,4 @@ class APIClientRepository:
             api_client = APIClientModel.objects.get(client_id=client_id)
             return UserModel.objects.get(id=api_client.user_id)
         except DoesNotExist:
-            return None 
+            return None

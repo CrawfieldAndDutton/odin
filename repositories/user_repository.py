@@ -170,7 +170,7 @@ class UserRepository:
         """
         if user.credits < deduction_value:
             raise InsufficientCreditsException()
-        
+
         user.credits -= deduction_value
         user.save()
         return user

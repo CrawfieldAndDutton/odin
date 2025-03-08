@@ -1,6 +1,5 @@
 # Standard library imports
 from datetime import datetime
-from typing import List
 
 # Third-party library imports
 from mongoengine import (

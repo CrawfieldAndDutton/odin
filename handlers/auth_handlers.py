@@ -437,29 +437,29 @@ class AuthHandler:
             # Decode BasicAuth token
             credentials = base64.b64decode(token.split(" ")[1]).decode("utf-8")
             client_id, client_secret = credentials.split(":")
-            
+
             # Get API client
             api_client = APIClientModel.objects.get(client_id=client_id)
             if not api_client:
                 logger.error("API client not found")
                 raise CredentialsException()
-            
+
             # Verify client secret
             if api_client.client_secret != client_secret:
                 logger.error("Invalid client secret")
                 raise CredentialsException()
-            
+
             # Check if client is enabled
             if not api_client.is_enabled:
                 logger.error("API client is disabled")
                 raise CredentialsException()
-            
+
             # Get associated user
             user = APIClientRepository.get_api_client(client_id)
             if not user:
                 logger.error("Associated user not found")
                 raise CredentialsException()
-            
+
             return user
         except Exception as e:
             logger.exception(f"Unexpected error in get_current_client: {str(e)}")
