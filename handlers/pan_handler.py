@@ -4,11 +4,16 @@ from typing import Optional, Dict, Any
 
 # Third-party library imports
 from fastapi.responses import JSONResponse
+from fastapi import status
 
 # Local application imports
+from dependencies.constants import UserLedgerTransactionType
+from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
 
 from dto.kyc_dto import PanVerificationRequest, APISuccessResponse
+
+from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 
 from models.kyc_model import KYCValidationTransaction
 
@@ -17,9 +22,13 @@ from repositories.kyc_repository import KYCRepository
 from services.aitan_services import PanService
 
 
+
 class PanHandler:
-    @staticmethod
-    async def verify_pan(
+    def __init__(self, ledger_handler: UserLedgerTransactionHandler):
+        self.ledger_handler = ledger_handler
+
+    def verify_pan(
+        self,
         request: PanVerificationRequest,
         user_id: str
     ) -> JSONResponse | APISuccessResponse:
@@ -37,6 +46,11 @@ class PanHandler:
         start_time = datetime.now()
 
         logger.info(f"Starting PAN verification for user {user_id} with PAN {pan}")
+        
+        # Check if user has sufficient credits
+        if not self.ledger_handler.check_if_eligible(user_id, UserLedgerTransactionType.KYC_PAN):
+            logger.error(f"User {user_id} has insufficient credits to verify PAN {pan}")
+            raise InsufficientCreditsException()
 
         cached_record = KYCRepository.get_cached_record_pan("PAN", {"pan": pan},  user_id)
 
@@ -48,7 +62,7 @@ class PanHandler:
 
         try:
             logger.info(f"No cached record found for PAN {pan}. Calling external API.")
-            response, tat = await PanService.call_external_api(pan)
+            response, tat = PanService.call_external_api(pan)
             external_response = response.json()
             status = PanHandler._determine_status(response, external_response)
             transaction = PanHandler._create_transaction(
@@ -59,6 +73,9 @@ class PanHandler:
             logger.info(f"Transaction to be saved: {transaction}")
             transaction.save()
             logger.info(f"Transaction saved successfully for PAN {pan}.")
+
+            if status in ["FOUND", "NOT_FOUND"]:
+                self.ledger_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_PAN)
 
             if response.status_code != 200:
                 logger.exception(f"Returning JSONResponse with status code: {response.status_code}")
@@ -114,7 +131,7 @@ class PanHandler:
         else:
             status = "ERROR"
         transaction = KYCValidationTransaction(
-            api_name="PAN",
+            api_name=UserLedgerTransactionType.KYC_PAN,
             provider_name="INTERNAL",
             is_cached=False,
             tat=tat,
@@ -197,7 +214,7 @@ class PanHandler:
         """
         provider_name = "AITAN" if is_cached else "INTERNAL"
         transaction = KYCValidationTransaction(
-            api_name="PAN",
+            api_name=UserLedgerTransactionType.KYC_RC,
             provider_name=provider_name,
             is_cached=is_cached,
             tat=tat,
@@ -237,7 +254,7 @@ class PanHandler:
             provider_name="AITAN",
             is_cached=False,
             tat=0,
-            http_status_code=500,
+            http_status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             status="ERROR",
             message=error_message,
             kyc_transaction_details={"pan": pan},
@@ -249,9 +266,9 @@ class PanHandler:
         transaction.save()
         logger.info(f"Transaction saved successfully for PAN {pan} (exception).")
         return JSONResponse(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
-                "http_status_code": 500,
+                "http_status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "message": "Failure",
                 "error": error_message}
         )
