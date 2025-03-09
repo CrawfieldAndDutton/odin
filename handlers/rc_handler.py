@@ -4,11 +4,16 @@ from typing import Dict, Any, Optional, Union
 
 # Third-party library imports
 from fastapi.responses import JSONResponse
+from fastapi import status
 
 # Local application imports
+from dependencies.constants import UserLedgerTransactionType
+from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
 
 from dto.kyc_dto import VehicleVerificationRequest, APISuccessResponse
+
+from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 
 from models.kyc_model import KYCValidationTransaction
 
@@ -18,8 +23,12 @@ from services.aitan_services import RCService
 
 
 class RCHandler:
-    @staticmethod
-    async def verify_vehicle(
+
+    def __init__(self, ledger_handler: UserLedgerTransactionHandler):
+        self.ledger_handler = ledger_handler
+
+    def verify_vehicle(
+        self,
         request: VehicleVerificationRequest,
         user_id: str
     ) -> Union[APISuccessResponse, JSONResponse]:
@@ -38,6 +47,11 @@ class RCHandler:
 
         logger.info(f"Starting vehicle verification for user {user_id} with registration number {reg_no}")
 
+        # Check if user has sufficient credits
+        if not self.ledger_handler.check_if_eligible(user_id, UserLedgerTransactionType.KYC_RC):
+            logger.error(f"User {user_id} has insufficient credits to verify RC {reg_no}")
+            raise InsufficientCreditsException()
+
         # Check for cached record
         cached_record = KYCRepository.get_cached_record_vehicle("RC_V1", {"reg_no": reg_no}, user_id)
         logger.info(f"Cache check result for reg_no {reg_no}: {'Hit' if cached_record else 'Miss'}")
@@ -51,7 +65,7 @@ class RCHandler:
 
         try:
             logger.info(f"Calling external API for reg_no {reg_no}")
-            response, tat = await RCService.call_external_api(reg_no)
+            response, tat = RCService.call_external_api(reg_no)
             external_response = response.json()
             logger.info(f"External API response received with status code {response.status_code} in {tat} seconds")
 
@@ -64,6 +78,10 @@ class RCHandler:
             logger.info(f"Created transaction: {transaction}")
             transaction.save()
             logger.info("Saved transaction to database")
+
+            if status in ["FOUND", "NOT_FOUND"]:
+                self.ledger_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC)
+
             if response.status_code == 206:
                 logger.info(f"Returning partial JSONResponse with status code: {response.status_code}")
                 partial_response = JSONResponse(
@@ -134,7 +152,7 @@ class RCHandler:
         logger.info(f"Cached record status: {status}")
 
         transaction = KYCValidationTransaction(
-            api_name="RC_V1",
+            api_name=UserLedgerTransactionType.KYC_RC,
             provider_name="INTERNAL",
             is_cached=False,
             tat=tat,
@@ -236,7 +254,7 @@ class RCHandler:
             payload = {}
 
         transaction = KYCValidationTransaction(
-            api_name="RC_V1",
+            api_name=UserLedgerTransactionType.KYC_RC,
             provider_name=provider_name,
             is_cached=is_cached,
             tat=tat,
@@ -273,11 +291,11 @@ class RCHandler:
         logger.error(error_message, exc_info=True)
 
         transaction = KYCValidationTransaction(
-            api_name="RC_V1",
+            api_name=UserLedgerTransactionType.KYC_RC,
             provider_name="AITAN",
             is_cached=False,
             tat=0,
-            http_status_code=500,
+            http_status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             status="ERROR",
             message=error_message,
             kyc_transaction_details={"reg_no": reg_no},
@@ -291,9 +309,9 @@ class RCHandler:
         logger.info("Saved error transaction to database")
 
         error_response = JSONResponse(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
-                "http_status_code": 500,
+                "http_status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "message": "Failure",
                 "error": error_message}
         )

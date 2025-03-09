@@ -12,7 +12,7 @@ from pytz import timezone
 
 # Local application imports
 from dependencies.logger import logger
-from dependencies.config import Config as settings
+from dependencies.configuration import AppConfiguration as settings
 from dependencies.password_utils import PasswordUtils
 from dependencies.exceptions import CredentialsException, UserNotFoundException, UserAlreadyExistsException
 
@@ -244,18 +244,18 @@ class AuthHandler:
         return result > 0
 
     @staticmethod
-    async def login_user(form_data: security.OAuth2PasswordRequestForm) -> Token:
+    def login_user(form_data: security.OAuth2PasswordRequestForm) -> Token:
         """
         Authenticate a user and return access and refresh tokens.
 
         Args:
-            form_data: The OAuth2 password request form containing username and password.
+            form_data: The login form data containing username and password.
 
         Returns:
-            Token: Access token, refresh token, and expiration details.
+            Token: The access and refresh tokens.
 
         Raises:
-            HTTPException: If the username or password is incorrect.
+            HTTPException: If the credentials are invalid.
         """
         user = UserRepository.get_user_by_username(form_data.username)
         if not user or not PasswordUtils.verify_password(form_data.password, user.hashed_password):
@@ -281,15 +281,15 @@ class AuthHandler:
         }
 
     @staticmethod
-    async def refresh_user_token(token_data: RefreshTokenRequest) -> TokenRefresh:
+    def refresh_user_token(token_data: RefreshTokenRequest) -> TokenRefresh:
         """
-        Refresh an access token using a valid refresh token.
+        Refresh a user's access token using their refresh token.
 
         Args:
-            token_data: The refresh token request containing the refresh token.
+            token_data: The refresh token request data.
 
         Returns:
-            TokenRefresh: New access token and expiration details.
+            TokenRefresh: The new access token.
 
         Raises:
             HTTPException: If the refresh token is invalid.
@@ -313,25 +313,26 @@ class AuthHandler:
         }
 
     @staticmethod
-    async def logout_user(token_data: RefreshTokenRequest, current_user: UserModel) -> Dict[str, str]:
+    def logout_user(token_data: RefreshTokenRequest, current_user: UserModel) -> Dict[str, str]:
         """
-        Log out a user and invalidate their refresh tokens.
+        Logout a user by invalidating their refresh token.
 
         Args:
-            token_data: The refresh token request containing the refresh token.
-            current_user: The authenticated user.
+            token_data: The refresh token request data.
+            current_user: The current authenticated user.
 
         Returns:
             Dict[str, str]: A message indicating successful logout.
         """
-        AuthHandler.delete_refresh_token(token_data.refresh_token)
-        AuthHandler.delete_all_user_tokens(str(current_user.id))
-        current_user.is_active = False
-        current_user.save()
-        return {"detail": "Successfully logged out and all sessions terminated"}
+        if AuthHandler.delete_refresh_token(token_data.refresh_token):
+            return {"message": "Successfully logged out"}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid refresh token"
+        )
 
     @staticmethod
-    async def register_new_user(user_data: UserCreate) -> User:
+    def register_new_user(user_data: UserCreate) -> User:
         """
         Register a new user.
 
@@ -371,15 +372,15 @@ class AuthHandler:
         )
 
     @staticmethod
-    async def get_current_user_details(current_user: UserModel) -> User:
+    def get_current_user_details(current_user: UserModel) -> User:
         """
-        Retrieve details of the current authenticated user.
+        Get the current user's details.
 
         Args:
-            current_user: The authenticated user.
+            current_user: The current authenticated user.
 
         Returns:
-            User: Details of the authenticated user.
+            User: The user's details.
         """
         return User(
             _id=str(current_user.id),
@@ -394,16 +395,16 @@ class AuthHandler:
         )
 
     @staticmethod
-    async def update_current_user(user_data: UserUpdate, current_user: UserModel) -> User:
+    def update_current_user(user_data: UserUpdate, current_user: UserModel) -> User:
         """
-        Update details of the current authenticated user.
+        Update the current user's details.
 
         Args:
-            user_data: The user update request containing updated details.
-            current_user: The authenticated user.
+            user_data: The user update data.
+            current_user: The current authenticated user.
 
         Returns:
-            User: Updated details of the authenticated user.
+            User: The updated user.
         """
         updated_user = UserRepository.update_user(current_user, user_data)
 
@@ -466,17 +467,17 @@ class AuthHandler:
             raise CredentialsException()
 
     @staticmethod
-    async def get_api_client(authorization: str = Header(...)) -> UserModel:
+    def get_api_client(authorization: str = Header(...)) -> UserModel:
         """
-        Dependency to get the associated user from the Authorization header.
+        Get the API client from the authorization header.
 
         Args:
-            authorization: The Authorization header containing the BasicAuth token.
+            authorization: The authorization header value.
 
         Returns:
-            UserModel: The associated user.
+            UserModel: The API client user.
 
         Raises:
-            CredentialsException: If the token is invalid or client not found.
+            HTTPException: If the authorization header is invalid.
         """
         return AuthHandler.get_current_client(authorization)

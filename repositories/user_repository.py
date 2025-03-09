@@ -6,11 +6,13 @@ from mongoengine.errors import DoesNotExist
 
 # Local application imports
 from dependencies.password_utils import PasswordUtils
+from dependencies.logger import logger
 from dependencies.exceptions import InsufficientCreditsException
 
 from dto.user_dto import UserCreate, UserUpdate
 
 from models.user_model import User as UserModel
+from models.user_ledger_transaction_model import UserLedgerTransaction
 
 
 class UserRepository:
@@ -174,3 +176,17 @@ class UserRepository:
         user.credits -= deduction_value
         user.save()
         return user
+
+    @staticmethod
+    def update_user_credits(user_id: int, latest_txn: UserLedgerTransaction) -> UserModel:
+        """Update user credits based on the latest ledger transaction balance."""
+        try:
+            user = UserModel.objects.get(id=user_id)
+            user.credits = latest_txn.balance
+            user.save()
+            return user
+        except DoesNotExist:
+            raise ValueError(f"User with ID {user_id} not found")
+        except Exception as e:
+            logger.exception(f"Error updating user credits for user {user_id}: {str(e)}")
+            raise

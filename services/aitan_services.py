@@ -4,14 +4,14 @@ from requests.models import Response
 
 # Local application imports
 from dependencies.constants import VEHICLE_HEADERS, AITAN_CONSENT_PAYLOAD, PAN_HEADERS
-from dependencies.config import Config
+from dependencies.configuration import AppConfiguration
 
 from services.base_services import BaseService
 
 
 class PanService(BaseService):
     @staticmethod
-    async def call_external_api(
+    def call_external_api(
         pan: str,
     ) -> Tuple[Response, float]:
         """
@@ -28,12 +28,12 @@ class PanService(BaseService):
                 - Turn around time in seconds
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "pan": pan}
-        return BaseService.call_external_api(Config.EXTERNAL_API_URL_PAN, PAN_HEADERS, payload)
+        return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_PAN, PAN_HEADERS, payload)
 
 
 class RCService(BaseService):
     @staticmethod
-    async def call_external_api(
+    def call_external_api(
         reg_no: str,
     ) -> Tuple[Response, float]:
         """
@@ -50,4 +50,4 @@ class RCService(BaseService):
                 - Turn around time in seconds
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "reg_no": reg_no}
-        return BaseService.call_external_api(Config.EXTERNAL_API_URL_VEHICLE, VEHICLE_HEADERS, payload)
+        return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_VEHICLE, VEHICLE_HEADERS, payload)
