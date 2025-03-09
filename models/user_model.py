@@ -25,7 +25,6 @@ class User(Document):
     is_active = BooleanField(default=True)
     created_at = DateTimeField(default=lambda: datetime.now(ist))
     updated_at = DateTimeField(default=lambda: datetime.now(ist))
-
     meta = {
         'collection': 'users',
         'indexes': [
