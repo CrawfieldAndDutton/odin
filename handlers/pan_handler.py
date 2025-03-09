@@ -22,7 +22,6 @@ from repositories.kyc_repository import KYCRepository
 from services.aitan_services import PanService
 
 
-
 class PanHandler:
     def __init__(self, ledger_handler: UserLedgerTransactionHandler):
         self.ledger_handler = ledger_handler
@@ -46,7 +45,7 @@ class PanHandler:
         start_time = datetime.now()
 
         logger.info(f"Starting PAN verification for user {user_id} with PAN {pan}")
-        
+
         # Check if user has sufficient credits
         if not self.ledger_handler.check_if_eligible(user_id, UserLedgerTransactionType.KYC_PAN):
             logger.error(f"User {user_id} has insufficient credits to verify PAN {pan}")

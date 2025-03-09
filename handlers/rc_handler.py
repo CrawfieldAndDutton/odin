@@ -26,7 +26,7 @@ class RCHandler:
 
     def __init__(self, ledger_handler: UserLedgerTransactionHandler):
         self.ledger_handler = ledger_handler
-    
+
     def verify_vehicle(
         self,
         request: VehicleVerificationRequest,

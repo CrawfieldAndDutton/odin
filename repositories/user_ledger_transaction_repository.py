@@ -1,5 +1,4 @@
 # Standard library imports
-from datetime import datetime
 from typing import Optional
 
 # Third-party library imports
@@ -42,7 +41,7 @@ class UserLedgerTransactionRepository:
             # Get the latest transaction to calculate the new balance
             latest_txn = self.get_latest_ledger_txn_for_user(user_id)
             current_balance = latest_txn.balance if latest_txn else 0.0
-            
+
             # Calculate new balance based on transaction type
             new_balance = current_balance + amount
 
@@ -62,4 +61,4 @@ class UserLedgerTransactionRepository:
             return new_txn
         except Exception as e:
             logger.error(f"Error inserting ledger transaction for user {user_id}: {str(e)}")
-            raise 
+            raise

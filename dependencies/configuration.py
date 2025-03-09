@@ -28,7 +28,7 @@ class AppConfiguration:
 class ServicePricing:
     """Configuration for service pricing."""
 
-    # KYC Services
+    # KYC Service Costs
     KYC_PAN_COST = float(os.environ["KYC_PAN_COST"])
     KYC_AADHAAR_COST = float(os.environ["KYC_AADHAAR_COST"])
     KYC_VOTER_COST = float(os.environ["KYC_VOTER_COST"])
@@ -36,11 +36,11 @@ class ServicePricing:
     KYC_DL_COST = float(os.environ["KYC_DL_COST"])
     KYC_PASSPORT_COST = float(os.environ["KYC_PASSPORT_COST"])
 
-    # Employment Verification Services
+    # Employment Verification Service Costs
     EV_EMPLOYMENT_LATEST_COST = float(os.environ["EV_EMPLOYMENT_LATEST_COST"])
     EV_EMPLOYMENT_HISTORY_COST = float(os.environ["EV_EMPLOYMENT_HISTORY_COST"])
 
-    # Business Verification Services
+    # Business Verification Service Costs
     KYB_GSTIN_COST = float(os.environ["KYB_GSTIN_COST"])
 
     @classmethod
@@ -57,4 +57,4 @@ class ServicePricing:
             UserLedgerTransactionType.EV_EMPLOYMENT_HISTORY: cls.EV_EMPLOYMENT_HISTORY_COST,
             UserLedgerTransactionType.KYB_GSTIN: cls.KYB_GSTIN_COST,
         }
-        return cost_mapping.get(service_name, 0.0) 
+        return cost_mapping.get(service_name, 0.0)

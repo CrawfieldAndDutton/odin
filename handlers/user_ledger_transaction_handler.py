@@ -63,7 +63,7 @@ class UserLedgerTransactionHandler:
                 return None
 
             amount = ServicePricing.get_service_cost(service_name)
-            
+
             # Create new transaction
             new_txn = self.ledger_repository.insert_ledger_txn_for_user(
                 user_id=user_id,
@@ -73,7 +73,7 @@ class UserLedgerTransactionHandler:
             )
 
             return new_txn
-        
+
         except Exception as e:
             logger.exception(f"Error deducting credits for user {user_id}: {str(e)}")
-            return None 
+            return None

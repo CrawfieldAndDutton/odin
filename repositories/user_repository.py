@@ -1,6 +1,5 @@
 # Standard library imports
 from typing import Optional
-from datetime import datetime
 
 # Third-party library imports
 from mongoengine.errors import DoesNotExist
