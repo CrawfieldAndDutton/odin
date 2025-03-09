@@ -19,7 +19,7 @@ from handlers.auth_handlers import AuthHandler
 from models.user_model import User as UserModel
 
 # Create a single router for all routes
-auth_router = APIRouter()
+auth_router = APIRouter(prefix="/dashboard/api/v1")
 
 # Auth Routes
 

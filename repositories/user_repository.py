@@ -6,6 +6,7 @@ from mongoengine.errors import DoesNotExist
 
 # Local application imports
 from dependencies.password_utils import PasswordUtils
+from dependencies.exceptions import InsufficientCreditsException
 
 from dto.user_dto import UserCreate, UserUpdate
 
@@ -151,3 +152,25 @@ class UserRepository:
             int: The total number of users
         """
         return UserModel.objects.count()
+
+    @staticmethod
+    def deduct_credit(user: UserModel, deduction_value: float) -> UserModel:
+        """
+        Deduct credits from a user's balance.
+
+        Args:
+            user: The user to deduct credits from
+            deduction_value: The amount of credits to deduct
+
+        Returns:
+            UserModel: The updated user
+
+        Raises:
+            InsufficientCreditsException: If the user has insufficient credits
+        """
+        if user.credits < deduction_value:
+            raise InsufficientCreditsException()
+
+        user.credits -= deduction_value
+        user.save()
+        return user

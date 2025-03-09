@@ -25,3 +25,11 @@ class UserAlreadyExistsException(HTTPException):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists",
         )
+
+
+class InsufficientCreditsException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="Insufficient credits to perform this operation",
+        )
