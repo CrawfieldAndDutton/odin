@@ -11,8 +11,9 @@ from mongoengine import connect
 from dependencies.config import Config
 from dependencies.middleware_log import log_middleware
 
-from routes.user_router import auth_router
-from routes.kyc_router import kyc_router
+from routes.dashboard.user_router import auth_router
+from routes.api.kyc_router import kyc_router as api_kyc_router
+from routes.dashboard.kyc_router import kyc_router as dashboard_kyc_router
 
 
 # Initialize FastAPI app
@@ -41,12 +42,14 @@ def read_root():
 
 # Register routers
 app.include_router(auth_router)
-app.include_router(kyc_router)
+app.include_router(api_kyc_router)
+app.include_router(dashboard_kyc_router)
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info",
-                workers=1,
-                timeout_keep_alive=5
-                )
+    uvicorn.run(
+        app, host="0.0.0.0",
+        port=8000, log_level="info",
+        workers=1, timeout_keep_alive=5
+    )

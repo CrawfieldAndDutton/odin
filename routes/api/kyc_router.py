@@ -20,15 +20,14 @@ kyc_router = APIRouter(prefix="/api/v1", tags=["KYC Verification API"])
 @kyc_router.post("/pan/verify", response_model=APISuccessResponse)
 async def verify_pan(
     request: PanVerificationRequest,
-    user: UserModel = Depends(AuthHandler.get_current_active_user)
+    user: UserModel = Depends(AuthHandler.get_api_client)
 ) -> Union[APISuccessResponse, JSONResponse]:
     """
     Verify PAN details.
 
     Args:
         request: PAN verification request
-        fastapi_request: FastAPI request object
-        user: Authenticated user
+        user: Authenticated user associated with the API client
 
     Returns:
         PanVerificationResponse or JSONResponse for error cases
@@ -39,15 +38,14 @@ async def verify_pan(
 @kyc_router.post("/rc/verify", response_model=APISuccessResponse)
 async def verify_vehicle(
     request: VehicleVerificationRequest,
-    user: UserModel = Depends(AuthHandler.get_current_active_user)
+    user: UserModel = Depends(AuthHandler.get_api_client)
 ) -> Union[APISuccessResponse, JSONResponse]:
     """
     Verify vehicle registration details.
 
     Args:
         request: Vehicle verification request
-        fastapi_request: FastAPI request object
-        user: Authenticated user
+        user: Authenticated user associated with the API client
 
     Returns:
         VehicleVerificationResponse or JSONResponse for error cases
