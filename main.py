@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from mongoengine import connect
 
 # Local application imports
-from dependencies.config import Config
+from dependencies.configuration import AppConfiguration
 from dependencies.middleware_log import log_middleware
 
 from routes.dashboard.user_router import auth_router
