@@ -12,7 +12,9 @@ from models.kyc_model import KYCValidationTransaction
 
 class KYCRepository:
 
-    def get_kyc_validation_transaction(self, api_name: str, identifier: str, status: str) -> Optional[KYCValidationTransaction]:
+    def get_kyc_validation_transaction(
+        self, api_name: str, identifier: str, status: str
+    ) -> Optional[KYCValidationTransaction]:
         try:
             if api_name == UserLedgerTransactionType.KYC_PAN.value:
                 return KYCValidationTransaction.objects(
@@ -31,7 +33,7 @@ class KYCRepository:
         except Exception as e:
             logger.error(f"Error getting KYC validation transaction {api_name} with {identifier}: {str(e)}")
             raise e
-    
+
     def create_kyc_validation_transaction(
         self,
         user_id: str,

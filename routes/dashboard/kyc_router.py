@@ -36,8 +36,21 @@ def verify_pan(
         PanVerificationResponse or JSONResponse for error cases
     """
     try:
-        pan_verification_response, http_status_code = PanHandler().get_pan_kyc_details(pan=request.pan, user_id=str(user.id))
+        pan_verification_response, http_status_code = PanHandler().get_pan_kyc_details(
+            pan=request.pan, user_id=str(user.id)
+        )
         logger.info(f"PAN Verification Response: {pan_verification_response}")
+
+        if http_status_code != status.HTTP_200_OK:
+            return JSONResponse(
+            status_code=http_status_code,
+            content={
+                "http_status_code": http_status_code,
+                "message": "Failure",
+                "error": pan_verification_response.get('message')
+            }
+        )
+
         return APISuccessResponse(
             message="PAN Verification Successful",
             result=pan_verification_response,

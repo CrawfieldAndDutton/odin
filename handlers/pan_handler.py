@@ -61,7 +61,7 @@ class PanHandler:
                 provider_name=KYCProvider.INTERNAL.value
             )
             pan_verification_response = cached_details.kyc_provider_response
-        
+
         else:
             # Step 2: If not cached, get from API
             pan_verification_response = self.__get_pan_kyc_details_from_api(pan, transaction)
@@ -69,7 +69,7 @@ class PanHandler:
         if transaction.status == "FOUND":
             self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_PAN.value)
 
-        return pan_verification_response.get("result"), transaction.http_status_code
+        return pan_verification_response, transaction.http_status_code
 
     def __get_pan_kyc_details_from_db(self, pan: str) -> dict:
         """
