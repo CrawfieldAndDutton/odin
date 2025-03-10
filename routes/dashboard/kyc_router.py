@@ -43,13 +43,13 @@ def verify_pan(
 
         if http_status_code != status.HTTP_200_OK:
             return JSONResponse(
-            status_code=http_status_code,
-            content={
-                "http_status_code": http_status_code,
-                "message": "Failure",
-                "error": pan_verification_response.get('message')
-            }
-        )
+                status_code=http_status_code,
+                content={
+                    "http_status_code": http_status_code,
+                    "message": "Failure",
+                    "error": pan_verification_response.get('message')
+                }
+            )
 
         return APISuccessResponse(
             message="PAN Verification Successful",
