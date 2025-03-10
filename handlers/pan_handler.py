@@ -11,7 +11,8 @@ from dependencies.constants import UserLedgerTransactionType
 from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
 
-from dto.kyc_dto import PanVerificationRequest, APISuccessResponse
+from dto.kyc_dto import PanVerificationRequest
+from dto.common_dto import APISuccessResponse
 
 from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 

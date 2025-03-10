@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 # Local application imports
-from dto.kyc_dto import PanVerificationRequest, APISuccessResponse, VehicleVerificationRequest
+from dto.kyc_dto import PanVerificationRequest, VehicleVerificationRequest
+from dto.common_dto import APISuccessResponse
 
 from handlers.auth_handlers import AuthHandler
 from handlers.pan_handler import PanHandler
