@@ -1,6 +1,3 @@
-# Standard library imports
-from typing import Optional
-
 # Third-party library imports
 from pydantic import BaseModel, Field
 

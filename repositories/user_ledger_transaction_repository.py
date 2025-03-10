@@ -1,7 +1,6 @@
 # Standard library imports
 from typing import Optional, Dict, List
 from datetime import datetime, timedelta, UTC
-from mongoengine.queryset.visitor import Q
 
 # Third-party library imports
 from mongoengine.errors import DoesNotExist
@@ -86,7 +85,7 @@ class UserLedgerTransactionRepository:
         """Get weekly statistics for a specific service."""
         try:
             week_ago = datetime.now(UTC) - timedelta(days=7)
-            
+
             # Get all transactions for the service in the last week
             transactions = UserLedgerTransaction.objects(
                 user_id=user_id,
