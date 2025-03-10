@@ -1,8 +1,8 @@
 # Standard library imports
-from typing import Any, Dict, List
+from typing import Any
 
 # Third-party library imports
-from fastapi import APIRouter, Depends, status, security, Query, HTTPException
+from fastapi import APIRouter, Depends, status, security, HTTPException
 
 # Local application imports
 from dto.user_dto import (
@@ -148,13 +148,14 @@ async def get_summary(
             message="Successfully retrieved service usage summary",
             result=result
         )
-    except Exception as e:
+    except Exception:
         logger.exception(f"Error fetching service usage summary for user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch service usage summary",
             headers={"WWW-Authenticate": "Bearer"}
         )
+
 
 @auth_router.get("/dashboard/pending-credits", response_model=APISuccessResponse, tags=["Dashboard"])
 async def get_pending_credits(
@@ -179,13 +180,14 @@ async def get_pending_credits(
             message="Successfully retrieved pending credits",
             result={"pending_credits": result}
         )
-    except Exception as e:
+    except Exception:
         logger.exception(f"Error fetching pending credits for user {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch pending credits",
             headers={"WWW-Authenticate": "Bearer"}
         )
+
 
 @auth_router.get("/dashboard/weekly-stats/{service_name}", response_model=APISuccessResponse, tags=["Dashboard"])
 async def get_weekly_stats(
@@ -213,7 +215,7 @@ async def get_weekly_stats(
             message=f"Successfully retrieved weekly statistics for {service_name}",
             result=result
         )
-    except Exception as e:
+    except Exception:
         logger.exception(f"Error fetching weekly statistics for user {current_user.id} and service {service_name}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
