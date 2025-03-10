@@ -1,5 +1,7 @@
 # Standard library imports
-from typing import Optional
+from typing import Optional, Dict, List
+from datetime import datetime, timedelta, UTC
+from mongoengine.queryset.visitor import Q
 
 # Third-party library imports
 from mongoengine.errors import DoesNotExist
@@ -62,3 +64,57 @@ class UserLedgerTransactionRepository:
         except Exception as e:
             logger.error(f"Error inserting ledger transaction for user {user_id}: {str(e)}")
             raise
+
+    def get_service_usage_count(self, user_id: str) -> Dict[str, int]:
+        """Get count of transactions by service type for a user in the last 30 days."""
+        try:
+            thirty_days_ago = datetime.now(UTC) - timedelta(days=30)
+            transactions = UserLedgerTransaction.objects(
+                user_id=user_id,
+                created_at__gte=thirty_days_ago
+            )
+            service_types = transactions.distinct("type")
+            return {
+                service_type: transactions.filter(type=service_type).count()
+                for service_type in service_types
+            }
+        except Exception as e:
+            logger.error(f"Error getting service usage count for user {user_id}: {str(e)}")
+            return {}
+
+    def get_weekly_service_stats(self, user_id: str, service_name: str) -> List[Dict]:
+        """Get weekly statistics for a specific service."""
+        try:
+            week_ago = datetime.now(UTC) - timedelta(days=7)
+            
+            # Get all transactions for the service in the last week
+            transactions = UserLedgerTransaction.objects(
+                user_id=user_id,
+                type=service_name,
+                created_at__gte=week_ago
+            ).order_by('created_at')
+
+            # Group transactions by date
+            stats = {}
+            for txn in transactions:
+                date_key = txn.created_at.strftime("%Y-%m-%d")
+                if date_key not in stats:
+                    stats[date_key] = {
+                        "count": 0,
+                        "total_amount": 0.0
+                    }
+                stats[date_key]["count"] += 1
+                stats[date_key]["total_amount"] += txn.amount
+
+            # Convert to list format
+            return [
+                {
+                    "date": date,
+                    "count": data["count"],
+                    "total_amount": data["total_amount"]
+                }
+                for date, data in sorted(stats.items())
+            ]
+        except Exception as e:
+            logger.error(f"Error getting weekly service stats for user {user_id}: {str(e)}")
+            return []
