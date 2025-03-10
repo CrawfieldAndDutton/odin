@@ -1,13 +1,18 @@
 # Standard library imports
 import os
+from enum import Enum
 
 # Third-party library imports
 from dotenv import load_dotenv
 
-# Local application imports
-from dependencies.constants import UserLedgerTransactionType
-
 load_dotenv()
+
+
+class BaseEnum(Enum):
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
 
 
 class AppConfiguration:
@@ -47,14 +52,36 @@ class ServicePricing:
     def get_service_cost(cls, service_name: str) -> float:
         """Get the cost for a specific service."""
         cost_mapping = {
-            UserLedgerTransactionType.KYC_PAN: cls.KYC_PAN_COST,
-            UserLedgerTransactionType.KYC_AADHAAR: cls.KYC_AADHAAR_COST,
-            UserLedgerTransactionType.KYC_VOTER: cls.KYC_VOTER_COST,
-            UserLedgerTransactionType.KYC_RC: cls.KYC_RC_COST,
-            UserLedgerTransactionType.KYC_DL: cls.KYC_DL_COST,
-            UserLedgerTransactionType.KYC_PASSPORT: cls.KYC_PASSPORT_COST,
-            UserLedgerTransactionType.EV_EMPLOYMENT_LATEST: cls.EV_EMPLOYMENT_LATEST_COST,
-            UserLedgerTransactionType.EV_EMPLOYMENT_HISTORY: cls.EV_EMPLOYMENT_HISTORY_COST,
-            UserLedgerTransactionType.KYB_GSTIN: cls.KYB_GSTIN_COST,
+            UserLedgerTransactionType.KYC_PAN.value: cls.KYC_PAN_COST,
+            UserLedgerTransactionType.KYC_AADHAAR.value: cls.KYC_AADHAAR_COST,
+            UserLedgerTransactionType.KYC_VOTER.value: cls.KYC_VOTER_COST,
+            UserLedgerTransactionType.KYC_RC.value: cls.KYC_RC_COST,
+            UserLedgerTransactionType.KYC_DL.value: cls.KYC_DL_COST,
+            UserLedgerTransactionType.KYC_PASSPORT.value: cls.KYC_PASSPORT_COST,
+            UserLedgerTransactionType.EV_EMPLOYMENT_LATEST.value: cls.EV_EMPLOYMENT_LATEST_COST,
+            UserLedgerTransactionType.EV_EMPLOYMENT_HISTORY.value: cls.EV_EMPLOYMENT_HISTORY_COST,
+            UserLedgerTransactionType.KYB_GSTIN.value: cls.KYB_GSTIN_COST,
         }
         return cost_mapping.get(service_name, 0.0)
+
+
+class UserLedgerTransactionType(BaseEnum):
+    """Enum for user ledger transaction types."""
+
+    CREDIT = "CREDIT"
+    KYC_PAN = "KYC_PAN"
+    KYC_AADHAAR = "KYC_AADHAAR"
+    KYC_VOTER = "KYC_VOTER"
+    KYC_RC = "KYC_RC"
+    KYC_DL = "KYC_DL"
+    KYC_PASSPORT = "KYC_PASSPORT"
+    EV_EMPLOYMENT_LATEST = "EV_EMPLOYMENT_LATEST"
+    EV_EMPLOYMENT_HISTORY = "EV_EMPLOYMENT_HISTORY"
+    KYB_GSTIN = "KYB_GSTIN"
+
+
+class KYCProvider(BaseEnum):
+    """Enum for KYC providers."""
+
+    AITAN = "AITAN"
+    INTERNAL = "INTERNAL"

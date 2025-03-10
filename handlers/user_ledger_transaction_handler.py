@@ -2,8 +2,7 @@
 from typing import Optional
 
 # Local application imports
-from dependencies.configuration import ServicePricing
-from dependencies.constants import UserLedgerTransactionType
+from dependencies.configuration import ServicePricing, UserLedgerTransactionType
 from dependencies.logger import logger
 
 from models.user_ledger_transaction_model import UserLedgerTransaction
@@ -35,8 +34,7 @@ class UserLedgerTransactionHandler:
                 return False
 
             # Get latest transaction to check balance
-            latest_txn = self.ledger_repository.get_latest_ledger_txn_for_user(user_id)
-            current_balance = latest_txn.balance if latest_txn else 0.0
+            current_balance = self.user_repository.get_user_by_id(user_id).credits
 
             required_credits = ServicePricing.get_service_cost(service_name)
             return current_balance >= required_credits

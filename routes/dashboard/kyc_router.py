@@ -2,7 +2,7 @@
 from typing import Union
 
 # Third-party library imports
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 # Local application imports
@@ -19,7 +19,7 @@ kyc_router = APIRouter(prefix="/dashboard/api/v1", tags=["KYC Verification API"]
 
 
 @kyc_router.post("/pan/verify", response_model=APISuccessResponse)
-async def verify_pan(
+def verify_pan(
     request: PanVerificationRequest,
     user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> Union[APISuccessResponse, JSONResponse]:
@@ -28,17 +28,20 @@ async def verify_pan(
 
     Args:
         request: PAN verification request
-        fastapi_request: FastAPI request object
         user: Authenticated user
 
     Returns:
         PanVerificationResponse or JSONResponse for error cases
     """
-    return await PanHandler.verify_pan(request, str(user.id))
+    try:
+        pan_verification_response = PanHandler().get_pan_kyc_details(pan=request.pan, user_id=str(user.id))
+        return APISuccessResponse(message="PAN Verification Successful", data=pan_verification_response, http_status_code=status.HTTP_200_OK)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"message": str(e)})
 
 
 @kyc_router.post("/rc/verify", response_model=APISuccessResponse)
-async def verify_vehicle(
+def verify_vehicle(
     request: VehicleVerificationRequest,
     user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> Union[APISuccessResponse, JSONResponse]:
@@ -53,4 +56,4 @@ async def verify_vehicle(
     Returns:
         VehicleVerificationResponse or JSONResponse for error cases
     """
-    return await RCHandler.verify_vehicle(request, str(user.id))
+    return RCHandler().verify_vehicle(request, str(user.id))

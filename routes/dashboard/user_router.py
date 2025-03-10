@@ -28,7 +28,7 @@ auth_router = APIRouter(prefix="/dashboard/api/v1")
 
 
 @auth_router.post("/auth/login", response_model=Token, tags=["Auth"])
-async def login(form_data: security.OAuth2PasswordRequestForm = Depends()) -> Token:
+def login(form_data: security.OAuth2PasswordRequestForm = Depends()) -> Token:
     """
     Authenticate a user and return an access token and refresh token.
 
@@ -38,7 +38,7 @@ async def login(form_data: security.OAuth2PasswordRequestForm = Depends()) -> To
     Returns:
         Token: Access token and refresh token.
     """
-    return await AuthHandler.login_user(form_data)
+    return AuthHandler.login_user(form_data)
 
 
 @auth_router.post("/auth/refresh", response_model=TokenRefresh, tags=["Auth"])

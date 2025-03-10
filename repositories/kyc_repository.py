@@ -1,60 +1,80 @@
 # Standard library imports
-from typing import Optional
+from typing import Optional, Dict, Any
+
+# Third-party library imports
+from mongoengine import DoesNotExist
 
 # Local application imports
+from dependencies.logger import logger
+
 from models.kyc_model import KYCValidationTransaction
 
 
 class KYCRepository:
-    @staticmethod
-    def get_cached_record_vehicle(api_name: str, detail: dict, user_id: str) -> Optional[KYCValidationTransaction]:
+    
+    def get_kyc_validation_transaction(self, api_name: str, identifier: str) -> Optional[KYCValidationTransaction]:
+        try:
+            return KYCValidationTransaction.objects(api_name=api_name, identifier=identifier).first()
+        except DoesNotExist:
+            return None
+        except Exception as e:
+            logger.error(f"Error getting KYC validation transaction for {api_name} with identifier {identifier}: {str(e)}")
+            raise e
+    
+    def create_kyc_validation_transaction(
+        self,
+        user_id: str,
+        api_name: str,
+        status: str,
+        provider_name: str
+    ) -> KYCValidationTransaction:
         """
-        Find a cached record for the given API name, identifier, and user_id.
+        Create a new KYC validation transaction.
 
         Args:
-            api_name: Name of the API
-            detail: Dictionary containing the reg_no
             user_id: ID of the user
+            api_name: Name of the API (e.g., KYC_PAN, KYC_RC)
+            status: Transaction status
+            provider_name: Name of the provider
 
         Returns:
-            Optional[KYCValidationTransaction]: The cached record if found, None otherwise
+            Created KYCValidationTransaction object
         """
-        return KYCValidationTransaction.objects(
-            api_name=api_name,
-            kyc_transaction_details__reg_no=detail["reg_no"],
-            user_id=user_id,
-            is_cached=True,
-        ).first()
+        try:
+            transaction = KYCValidationTransaction(
+                user_id=user_id,
+                api_name=api_name,
+                status=status,
+                provider_name=provider_name
+            )
+            transaction.save()
+            logger.info(f"Created KYC validation transaction for user {user_id} with API {api_name}")
+            return transaction
+        except Exception as e:
+            logger.error(f"Error creating KYC validation transaction: {str(e)}")
+            raise e
 
-    @staticmethod
-    def get_cached_record_pan(api_name: str, detail: dict, user_id: str) -> Optional[KYCValidationTransaction]:
+    def update_kyc_validation_transaction(
+        self,
+        kyc_validation_transaction: KYCValidationTransaction,
+        **kwargs
+    ) -> KYCValidationTransaction:
         """
-        Find a cached record for the given API name, identifier, and user_id.
+        Update an existing KYC validation transaction.
 
         Args:
-            api_name: Name of the API
-            detail: Dictionary containing the pan
-            user_id: ID of the user
+            kyc_validation_transaction: Transaction to update
+            **kwargs: Fields to update
 
         Returns:
-            Optional[KYCValidationTransaction]: The cached record if found, None otherwise
+            Updated KYCValidationTransaction object
         """
-        return KYCValidationTransaction.objects(
-            api_name=api_name,
-            kyc_transaction_details__pan=detail["pan"],
-            user_id=user_id,
-            is_cached=True,
-        ).first()
-
-    @staticmethod
-    def save_transaction(transaction: KYCValidationTransaction) -> None:
-        """
-        Save a KYC transaction to the database.
-
-        Args:
-            transaction: The KYC transaction to save
-
-        Returns:
-            None
-        """
-        transaction.save()
+        try:
+            for key, value in kwargs.items():
+                setattr(kyc_validation_transaction, key, value)
+            kyc_validation_transaction.save()
+            logger.info(f"Updated KYC validation transaction {kyc_validation_transaction.id}")
+            return kyc_validation_transaction
+        except Exception as e:
+            logger.error(f"Error updating KYC validation transaction: {str(e)}")
+            raise e

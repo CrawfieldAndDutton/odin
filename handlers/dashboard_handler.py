@@ -35,7 +35,7 @@ class DashboardHandler:
             float: Total pending credits amount
         """
         user_obj = self.user_repository.get_user_by_id(user_id)
-        return user_obj.balance
+        return user_obj.credits
 
     def get_user_weekly_statistics(self, user_id: str, service_name: str) -> List[Dict]:
         """
@@ -54,7 +54,7 @@ class DashboardHandler:
             )
             return [
                 {
-                    "date": f"{stat['_id']['year']}-{stat['_id']['month']}-{stat['_id']['day']}",
+                    "date": stat["date"],
                     "count": stat["count"],
                     "total_amount": stat["total_amount"]
                 }

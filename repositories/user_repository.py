@@ -178,7 +178,7 @@ class UserRepository:
         return user
 
     @staticmethod
-    def update_user_credits(user_id: int, latest_txn: UserLedgerTransaction) -> UserModel:
+    def update_user_credits(user_id: str, latest_txn: UserLedgerTransaction) -> UserModel:
         """Update user credits based on the latest ledger transaction balance."""
         try:
             user = UserModel.objects.get(id=user_id)

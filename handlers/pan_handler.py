@@ -1,274 +1,162 @@
-# Standard library imports
-from datetime import datetime
-from typing import Optional, Dict, Any
-
-# Third-party library imports
-from fastapi.responses import JSONResponse
-from fastapi import status
-
-# Local application imports
+from dependencies.configuration import KYCProvider, ServicePricing
 from dependencies.constants import UserLedgerTransactionType
 from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
-
-from dto.kyc_dto import PanVerificationRequest
-from dto.common_dto import APISuccessResponse
 
 from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 
 from models.kyc_model import KYCValidationTransaction
 
+from repositories.user_repository import UserRepository
 from repositories.kyc_repository import KYCRepository
 
 from services.aitan_services import PanService
 
 
 class PanHandler:
-    def __init__(self, ledger_handler: UserLedgerTransactionHandler):
-        self.ledger_handler = ledger_handler
 
-    def verify_pan(
-        self,
-        request: PanVerificationRequest,
-        user_id: str
-    ) -> JSONResponse | APISuccessResponse:
+    def __init__(self):
+        self.user_repository = UserRepository()
+        self.kyc_repository = KYCRepository()
+        self.user_ledger_transaction_handler = UserLedgerTransactionHandler()
+
+    def get_pan_kyc_details(self, pan: str, user_id: str) -> dict:
         """
-        Verify pan using pan number.
+        Get PAN KYC details, first checking cache then API.
 
         Args:
-            request: PAN verification request containing pan number
+            pan: PAN number to verify
             user_id: ID of the user making the request
 
         Returns:
-            APISuccessRespons or JSONResponse
+            dict: PAN verification details
         """
-        pan = request.pan
-        start_time = datetime.now()
-
-        logger.info(f"Starting PAN verification for user {user_id} with PAN {pan}")
-
         # Check if user has sufficient credits
-        if not self.ledger_handler.check_if_eligible(user_id, UserLedgerTransactionType.KYC_PAN):
+        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_PAN_COST:
             logger.error(f"User {user_id} has insufficient credits to verify PAN {pan}")
             raise InsufficientCreditsException()
 
-        cached_record = KYCRepository.get_cached_record_pan("PAN", {"pan": pan},  user_id)
+        transaction = self.kyc_repository.create_kyc_validation_transaction(
+            user_id=user_id,
+            api_name=UserLedgerTransactionType.KYC_PAN.value,
+            status="ERROR",
+            provider_name=KYCProvider.INTERNAL.value
+        )
 
-        end_time = datetime.now()
-        if cached_record:
-            tat = (end_time - start_time).total_seconds()
-            logger.info(f"Cached record found for PAN {pan}. Handling cached record.")
-            return PanHandler._handle_cached_record(cached_record, pan, user_id, tat)
-
-        try:
-            logger.info(f"No cached record found for PAN {pan}. Calling external API.")
-            response, tat = PanService.call_external_api(pan)
-            external_response = response.json()
-            status = PanHandler._determine_status(response, external_response)
-            transaction = PanHandler._create_transaction(
-                response, tat, status, user_id,
-                payload={"pan": pan}, external_response=external_response,
-                is_cached=True
-            )
-            logger.info(f"Transaction to be saved: {transaction}")
-            transaction.save()
-            logger.info(f"Transaction saved successfully for PAN {pan}.")
-
-            if status in ["FOUND", "NOT_FOUND"]:
-                self.ledger_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_PAN)
-
-            if response.status_code != 200:
-                logger.exception(f"Returning JSONResponse with status code: {response.status_code}")
-                return JSONResponse(
-                    status_code=response.status_code,
-                    content={
-                        "http_status_code": response.status_code,
-                        "message": "Failure",
-                        "error": external_response.get("message")}
-                )
-
-            logger.info(f"Returning successful PAN verification response for user {user_id}")
-            return APISuccessResponse(
-                http_status_code=response.status_code,
-                message="Success",
-                result=external_response,
+        # Step 1: Check if the PAN is already cached
+        cached_details = self.__get_pan_kyc_details_from_db(pan, user_id)
+        if cached_details:
+            # Update transaction with response details
+            self.kyc_repository.update_kyc_validation_transaction(
+                transaction,
+                http_status_code=cached_details.http_status_code,
+                tat=cached_details.tat,
+                message=cached_details.message,
+                kyc_transaction_details=cached_details.kyc_transaction_details,
+                kyc_provider_request=cached_details.kyc_provider_request,
+                kyc_provider_response=cached_details.kyc_provider_response,
+                status=cached_details.status,
+                is_cached=True,
+                provider_name=KYCProvider.INTERNAL.value
             )
 
-        except Exception as e:
-            logger.exception(f"Returning JSONResponse with status code: {500}")
-            return PanHandler._handle_exception(e, pan, user_id)
+            if transaction.status == "FOUND":
+                self.user_ledger_transaction_handler.deduct_credits(user_id, ServicePricing.KYC_PAN_COST.value)
 
-    @staticmethod
-    def _handle_cached_record(
-        cached_record: KYCValidationTransaction,
-        pan: str,
-        user_id: str,
-        tat: float
-    ) -> JSONResponse | APISuccessResponse:
+            pan_verification_response = cached_details.kyc_provider_response
+            return pan_verification_response
+
+        # Step 2: If not cached, get from API
+        pan_verification_response = self.__get_pan_kyc_details_from_api(pan, user_id)
+
+        # Step 3: Deduct credits
+        if transaction.status == "FOUND":
+            self.user_ledger_transaction_handler.deduct_credits(user_id, ServicePricing.KYC_PAN_COST.value)
+
+        # Step 4: Return the PAN verification response
+        return pan_verification_response
+
+    def __get_pan_kyc_details_from_db(self, pan: str, user_id: str) -> dict:
         """
-        Handle cached pan record.
+        Get PAN details from database cache.
 
         Args:
-            cached_record: Cached record from database
-            pan: pan number
+            pan: PAN number to verify
             user_id: ID of the user making the request
-            tat: Turn around time in seconds
 
         Returns:
-            VehicleVerificationResponse or JSONResponse
+            dict: Cached PAN details or None if not found
         """
-        if cached_record.http_status_code == 200:
-            if cached_record.kyc_provider_response.get("status_code") == 100:
+        try:
+            transaction = self.kyc_repository.get_kyc_validation_transaction(
+                api_name=UserLedgerTransactionType.KYC_PAN.value,
+                identifier=pan
+            )
+            if transaction and transaction.kyc_provider_response:
+                logger.info(f"Cache hit for PAN {pan}")
+                return transaction
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching PAN {pan} from cache: {str(e)}")
+            return None
+
+    def __get_pan_kyc_details_from_api(self, pan: str, transaction: KYCValidationTransaction) -> dict:
+        """
+        Get PAN details from external API.
+
+        Args:
+            pan: PAN number to verify
+            transaction: KYC validation transaction object
+
+        Returns:
+            dict: PAN verification details from API
+        """
+        try:
+            # Call external API
+            response, tat = PanService.call_external_api(pan)
+            external_response = response.json()
+
+            # Update transaction with response details
+            self.kyc_repository.update_kyc_validation_transaction(
+                transaction,
+                http_status_code=response.status_code,
+                tat=tat,
+                message=external_response.get("message", "No message provided"),
+                kyc_transaction_details={"pan": pan},
+                kyc_provider_request={"pan": pan},
+                kyc_provider_response=external_response,
+                status=self.__determine_status(response.status_code, external_response.get("status_code", 0)),
+                is_cached=False,
+                provider_name=KYCProvider.AITAN.value
+            )
+            return external_response
+
+        except Exception as e:
+            logger.error(f"Error fetching PAN {pan} from API: {str(e)}")
+            raise e
+
+    def __determine_status(self, http_status_code: int, response_status_code: int) -> str:
+        """
+        Determine the status of the PAN verification.
+
+        Args:
+            http_status_code: HTTP status code of the API response
+            response_status_code: Status code of the API response
+
+        Returns:
+            str: Status of the PAN verification
+        """
+        status = "ERROR"
+        if http_status_code == 200:
+            if response_status_code == 100:
                 status = "FOUND"
-            elif cached_record.kyc_provider_response.get("status_code") == 101:
+            elif response_status_code == 101:
                 status = "FOUND"
-            elif cached_record.kyc_provider_response.get("status_code") == 102:
+            elif response_status_code == 102:
                 status = "NOT_FOUND"
             else:
                 status = "ERROR"
-        elif cached_record.http_status_code == 400:
+        elif http_status_code == 400:
             status = "BAD_REQUEST"
-        else:
-            status = "ERROR"
-        transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_PAN,
-            provider_name="INTERNAL",
-            is_cached=False,
-            tat=tat,
-            message=cached_record.message,
-            http_status_code=cached_record.http_status_code,
-            status=status,
-            kyc_transaction_details={"pan": pan},
-            kyc_provider_request=cached_record.kyc_provider_request,
-            kyc_provider_response=cached_record.kyc_provider_response,
-            user_id=user_id,
-        )
-        logger.info(f"Transaction to be saved (cached): {transaction}")
-        transaction.save()
-        logger.info(f"Transaction saved successfully for PAN {pan} (cached).")
-        if cached_record.http_status_code != 200:
-            logger.exception(f"Returning JSONResponse with status code: {cached_record.http_status_code}")
-            return JSONResponse(
-                status_code=cached_record.http_status_code,
-                content={
-                    "http_status_code": cached_record.http_status_code,
-                    "message": "Failure",
-                    "error": cached_record.message}
-            )
-        logger.info(f"Returning cached PAN verification result for user {user_id}")
-        return APISuccessResponse(
-            http_status_code=cached_record.http_status_code,
-            message="Success",
-            result=cached_record.kyc_provider_response,
-        )
 
-    @staticmethod
-    def _determine_status(
-        response: Any,
-        external_response: Optional[Dict[str, Any]] = None
-    ) -> str:
-        """
-        Determine status from response status code.
-
-        Args:
-            response: Response object with status_code attribute
-
-        Returns:
-            String representing the status
-        """
-        if external_response:
-            if external_response.get("status_code") in [100, 101]:
-                return "FOUND"
-            elif external_response.get("status_code") == 102:
-                return "NOT_FOUND"
-        if response.status_code == 200:
-            return "FOUND"
-        elif response.status_code == 400:
-            return "BAD_REQUEST"
-        return "ERROR"
-
-    @staticmethod
-    def _create_transaction(
-        response: Any,
-        tat: float,
-        status: str,
-        user_id: str,
-        payload: Optional[Dict[str, Any]] = None,
-        external_response: Optional[Dict[str, Any]] = None,
-        is_cached: bool = True
-    ) -> KYCValidationTransaction:
-        """
-        Create KYC validation transaction.
-
-        Args:
-            response: Response object
-            tat: Turn around time in seconds
-            status: Transaction status
-            user_id: ID of the user making the request
-            payload: Request payload
-            external_response: External API response
-            is_cached: when the record is cached is True, otherwise False
-
-        Returns:
-            KYCValidationTransaction object
-        """
-        provider_name = "AITAN" if is_cached else "INTERNAL"
-        transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_RC,
-            provider_name=provider_name,
-            is_cached=is_cached,
-            tat=tat,
-            http_status_code=response.status_code,
-            status=status,
-            message=external_response.get("message", "No message provided") if external_response else response.message,
-            kyc_transaction_details={"pan": response.pan if not external_response else payload["pan"]},
-            kyc_provider_request=payload if payload else response.kyc_provider_request,
-            kyc_provider_response=external_response if external_response else response.kyc_provider_response,
-            user_id=user_id,
-        )
-        logger.info(f"Transaction created: {transaction}")
-        return transaction
-
-    @staticmethod
-    def _handle_exception(
-        e: Exception,
-        pan: str,
-        user_id: str,
-        # fastapi_request: Request
-    ) -> JSONResponse:
-        """
-        Handle exceptions during PAN verification.
-
-        Args:
-            e: Exception object
-            pan: pan number
-            user_id: ID of the user making the request
-
-        Returns:
-            JSONResponse with error details
-        """
-        error_message = f"An unexpected error occurred: {str(e)}"
-        logger.exception(error_message)
-        transaction = KYCValidationTransaction(
-            api_name="PAN",
-            provider_name="AITAN",
-            is_cached=False,
-            tat=0,
-            http_status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            status="ERROR",
-            message=error_message,
-            kyc_transaction_details={"pan": pan},
-            kyc_provider_request={"pan": pan},
-            kyc_provider_response={},
-            user_id=user_id,
-        )
-        logger.info(f"Transaction to be saved (exception): {transaction}")
-        transaction.save()
-        logger.info(f"Transaction saved successfully for PAN {pan} (exception).")
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "http_status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                "message": "Failure",
-                "error": error_message}
-        )
+        return status
