@@ -28,7 +28,7 @@ ist = timezone('Asia/Kolkata')
 
 
 class AuthHandler:
-    oauth2_scheme = security.OAuth2PasswordBearer(tokenUrl="auth/login")
+    oauth2_scheme = security.OAuth2PasswordBearer(tokenUrl="/dashboard/api/v1/auth/login")
 
     @staticmethod
     def get_current_user(token: str = Depends(oauth2_scheme)) -> UserModel:

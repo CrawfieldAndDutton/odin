@@ -35,7 +35,7 @@ class UserInDBBase(UserBase):
 
 
 class User(UserInDBBase):
-    pass
+    credits: float = 0.0
 
 
 class UserInDB(UserInDBBase):

@@ -1,5 +1,6 @@
 # Standard library imports
 import os
+# from typing import Optional
 
 # Third-party library imports
 from dotenv import load_dotenv
@@ -18,3 +19,9 @@ class Config:
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+
+    # Razorpay Configuration
+
+    RAZORPAY_KEY_ID: str = os.getenv("RAZORPAY_KEY_ID", "")
+    RAZORPAY_KEY_SECRET: str = os.getenv("RAZORPAY_KEY_SECRET", "")
+    API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost:8000")
