@@ -1,9 +1,6 @@
 # Standard library imports
-from typing import Optional, Dict, List
+from typing import Dict, List
 from datetime import datetime, timedelta, UTC
-
-# Third-party library imports
-from mongoengine.errors import DoesNotExist
 
 # Local application imports
 from dependencies.logger import logger

@@ -10,9 +10,6 @@ from mongoengine import (
 )
 from pytz import timezone
 
-# Local application imports
-from dependencies.configuration import UserLedgerTransactionType
-from models.user_model import User
 
 # Define IST timezone
 ist = timezone('Asia/Kolkata')
@@ -21,7 +18,7 @@ ist = timezone('Asia/Kolkata')
 class UserLedgerTransaction(Document):
     """
     Model for storing user ledger transactions.
-    
+
     Attributes:
         user (ReferenceField): Reference to the User model
         transaction_type (EnumField): Type of transaction (e.g., KYC_PAN, KYC_RC)

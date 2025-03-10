@@ -1,24 +1,35 @@
 # Standard library imports
-from typing import Optional, Dict, Any
+from typing import Optional
 
 # Third-party library imports
 from mongoengine import DoesNotExist
 
 # Local application imports
 from dependencies.logger import logger
-
+from dependencies.configuration import UserLedgerTransactionType
 from models.kyc_model import KYCValidationTransaction
 
 
 class KYCRepository:
-    
-    def get_kyc_validation_transaction(self, api_name: str, identifier: str) -> Optional[KYCValidationTransaction]:
+
+    def get_kyc_validation_transaction(self, api_name: str, identifier: str, status: str) -> Optional[KYCValidationTransaction]:
         try:
-            return KYCValidationTransaction.objects(api_name=api_name, identifier=identifier).first()
+            if api_name == UserLedgerTransactionType.KYC_PAN.value:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    kyc_transaction_details__pan=identifier,
+                    status=status
+                ).first()
+            elif api_name == UserLedgerTransactionType.KYC_RC.value:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    kyc_transaction_details__reg_no=identifier,
+                    status=status
+                ).first()
         except DoesNotExist:
             return None
         except Exception as e:
-            logger.error(f"Error getting KYC validation transaction for {api_name} with identifier {identifier}: {str(e)}")
+            logger.error(f"Error getting KYC validation transaction {api_name} with {identifier}: {str(e)}")
             raise e
     
     def create_kyc_validation_transaction(

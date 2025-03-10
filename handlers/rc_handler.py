@@ -28,6 +28,7 @@ class RCHandler:
     def __init__(self):
         self.ledger_handler = UserLedgerTransactionHandler()
         self.user_repository = UserRepository()
+
     def verify_vehicle(
         self,
         request: VehicleVerificationRequest,
@@ -54,7 +55,9 @@ class RCHandler:
             raise InsufficientCreditsException()
 
         # Check for cached record
-        cached_record = KYCRepository.get_cached_record_vehicle(UserLedgerTransactionType.KYC_RC.value, {"reg_no": reg_no}, user_id)
+        cached_record = KYCRepository.get_cached_record_vehicle(
+            UserLedgerTransactionType.KYC_RC.value, {"reg_no": reg_no}, user_id
+        )
         logger.info(f"Cache check result for reg_no {reg_no}: {'Hit' if cached_record else 'Miss'}")
 
         if cached_record:
