@@ -42,8 +42,11 @@ class BaseService(ABC):
                 - Turn around time in seconds
         """
         start_time = datetime.now()
+
         logger.info(f"Calling external API: {url}")
         response = requests.post(url, json=payload, headers=headers)
+        logger.info(f"Response [{response.status_code}]: {response.text}")
+
         end_time = datetime.now()
         tat = BaseService.calculate_tat(start_time, end_time)
         return response, tat

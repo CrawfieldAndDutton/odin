@@ -7,25 +7,27 @@ from fastapi.responses import JSONResponse
 from fastapi import status
 
 # Local application imports
-from dependencies.constants import UserLedgerTransactionType
+from dependencies.configuration import ServicePricing, UserLedgerTransactionType
 from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
 
-from dto.kyc_dto import VehicleVerificationRequest, APISuccessResponse
+from dto.kyc_dto import VehicleVerificationRequest
+from dto.common_dto import APISuccessResponse
 
 from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 
 from models.kyc_model import KYCValidationTransaction
 
 from repositories.kyc_repository import KYCRepository
-
+from repositories.user_repository import UserRepository
 from services.aitan_services import RCService
 
 
 class RCHandler:
 
-    def __init__(self, ledger_handler: UserLedgerTransactionHandler):
-        self.ledger_handler = ledger_handler
+    def __init__(self):
+        self.ledger_handler = UserLedgerTransactionHandler()
+        self.user_repository = UserRepository()
 
     def verify_vehicle(
         self,
@@ -48,12 +50,14 @@ class RCHandler:
         logger.info(f"Starting vehicle verification for user {user_id} with registration number {reg_no}")
 
         # Check if user has sufficient credits
-        if not self.ledger_handler.check_if_eligible(user_id, UserLedgerTransactionType.KYC_RC):
+        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_RC_COST:
             logger.error(f"User {user_id} has insufficient credits to verify RC {reg_no}")
             raise InsufficientCreditsException()
 
         # Check for cached record
-        cached_record = KYCRepository.get_cached_record_vehicle("RC_V1", {"reg_no": reg_no}, user_id)
+        cached_record = KYCRepository.get_cached_record_vehicle(
+            UserLedgerTransactionType.KYC_RC.value, {"reg_no": reg_no}, user_id
+        )
         logger.info(f"Cache check result for reg_no {reg_no}: {'Hit' if cached_record else 'Miss'}")
 
         if cached_record:
@@ -80,7 +84,7 @@ class RCHandler:
             logger.info("Saved transaction to database")
 
             if status in ["FOUND", "NOT_FOUND"]:
-                self.ledger_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC)
+                self.ledger_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC.value)
 
             if response.status_code == 206:
                 logger.info(f"Returning partial JSONResponse with status code: {response.status_code}")
@@ -152,7 +156,7 @@ class RCHandler:
         logger.info(f"Cached record status: {status}")
 
         transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_RC,
+            api_name=UserLedgerTransactionType.KYC_RC.value,
             provider_name="INTERNAL",
             is_cached=False,
             tat=tat,
@@ -254,7 +258,7 @@ class RCHandler:
             payload = {}
 
         transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_RC,
+            api_name=UserLedgerTransactionType.KYC_RC.value,
             provider_name=provider_name,
             is_cached=is_cached,
             tat=tat,
@@ -291,7 +295,7 @@ class RCHandler:
         logger.error(error_message, exc_info=True)
 
         transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_RC,
+            api_name=UserLedgerTransactionType.KYC_RC.value,
             provider_name="AITAN",
             is_cached=False,
             tat=0,

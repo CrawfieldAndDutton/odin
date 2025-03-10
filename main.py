@@ -31,7 +31,8 @@ app.add_middleware(
 connect(
     db=AppConfiguration.MAIN_DB,
     host=AppConfiguration.MONGO_URI,
-    alias="kyc_fabric_db"
+    alias="kyc_fabric_db",
+    tlsAllowInvalidCertificates=True
 )
 
 

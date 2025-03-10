@@ -1,8 +1,6 @@
 # Standard library imports
-from typing import Optional
-
-# Third-party library imports
-from mongoengine.errors import DoesNotExist
+from typing import Dict, List
+from datetime import datetime, timedelta, UTC
 
 # Local application imports
 from dependencies.logger import logger
@@ -18,18 +16,7 @@ class UserLedgerTransactionRepository:
     def __init__(self):
         self.user_repository = UserRepository()
 
-    @staticmethod
-    def get_latest_ledger_txn_for_user(user_id: str) -> Optional[UserLedgerTransaction]:
-        """Get the latest ledger transaction for a user."""
-        try:
-            return UserLedgerTransaction.objects(user_id=user_id).order_by('-created_at').first()
-        except DoesNotExist:
-            return None
-        except Exception as e:
-            logger.error(f"Error getting latest ledger transaction for user {user_id}: {str(e)}")
-            raise
-
-    async def insert_ledger_txn_for_user(
+    def insert_ledger_txn_for_user(
         self,
         user_id: str,
         type: str,
@@ -39,8 +26,7 @@ class UserLedgerTransactionRepository:
         """Insert a new ledger transaction for a user."""
         try:
             # Get the latest transaction to calculate the new balance
-            latest_txn = self.get_latest_ledger_txn_for_user(user_id)
-            current_balance = latest_txn.balance if latest_txn else 0.0
+            current_balance = self.user_repository.get_user_by_id(user_id).credits
 
             # Calculate new balance based on transaction type
             new_balance = current_balance + amount
@@ -56,9 +42,63 @@ class UserLedgerTransactionRepository:
             new_txn.save()
 
             # Update user credits to match the new balance
-            await self.user_repository.update_user_credits(int(user_id), new_txn)
+            self.user_repository.update_user_credits(user_id, new_txn)
 
             return new_txn
         except Exception as e:
             logger.error(f"Error inserting ledger transaction for user {user_id}: {str(e)}")
             raise
+
+    def get_service_usage_count(self, user_id: str) -> Dict[str, int]:
+        """Get count of transactions by service type for a user in the last 30 days."""
+        try:
+            thirty_days_ago = datetime.now(UTC) - timedelta(days=30)
+            transactions = UserLedgerTransaction.objects(
+                user_id=user_id,
+                created_at__gte=thirty_days_ago
+            )
+            service_types = transactions.distinct("type")
+            return {
+                service_type: transactions.filter(type=service_type).count()
+                for service_type in service_types
+            }
+        except Exception as e:
+            logger.error(f"Error getting service usage count for user {user_id}: {str(e)}")
+            return {}
+
+    def get_weekly_service_stats(self, user_id: str, service_name: str) -> List[Dict]:
+        """Get weekly statistics for a specific service."""
+        try:
+            week_ago = datetime.now(UTC) - timedelta(days=7)
+
+            # Get all transactions for the service in the last week
+            transactions = UserLedgerTransaction.objects(
+                user_id=user_id,
+                type=service_name,
+                created_at__gte=week_ago
+            ).order_by('created_at')
+
+            # Group transactions by date
+            stats = {}
+            for txn in transactions:
+                date_key = txn.created_at.strftime("%Y-%m-%d")
+                if date_key not in stats:
+                    stats[date_key] = {
+                        "count": 0,
+                        "total_amount": 0.0
+                    }
+                stats[date_key]["count"] += 1
+                stats[date_key]["total_amount"] += txn.amount
+
+            # Convert to list format
+            return [
+                {
+                    "date": date,
+                    "count": data["count"],
+                    "total_amount": data["total_amount"]
+                }
+                for date, data in sorted(stats.items())
+            ]
+        except Exception as e:
+            logger.error(f"Error getting weekly service stats for user {user_id}: {str(e)}")
+            return []
