@@ -13,20 +13,38 @@ from models.kyc_model import KYCValidationTransaction
 class KYCRepository:
 
     def get_kyc_validation_transaction(
-        self, api_name: str, identifier: str, status: str
+        self, api_name: str, identifier: str, kyc_service_billable_status: list[str]
     ) -> Optional[KYCValidationTransaction]:
         try:
             if api_name == UserLedgerTransactionType.KYC_PAN.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__pan=identifier,
-                    status=status
+                    status__in=kyc_service_billable_status,
                 ).first()
             elif api_name == UserLedgerTransactionType.KYC_RC.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__reg_no=identifier,
-                    status=status
+                    status__in=kyc_service_billable_status,
+                ).first()
+            elif api_name == UserLedgerTransactionType.KYC_VOTER.value:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    kyc_transaction_details__epic_no=identifier,
+                    status__in=kyc_service_billable_status,
+                ).first()
+            elif api_name == UserLedgerTransactionType.KYC_DL.value:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    kyc_transaction_details__dl_no=identifier,
+                    status__in=kyc_service_billable_status,
+                ).first()
+            elif api_name == UserLedgerTransactionType.KYC_PASSPORT.value:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    kyc_transaction_details__file_number=identifier,
+                    status__in=kyc_service_billable_status,
                 ).first()
         except DoesNotExist:
             return None
@@ -39,7 +57,8 @@ class KYCRepository:
         user_id: str,
         api_name: str,
         status: str,
-        provider_name: str
+        provider_name: str,
+        http_status_code: int
     ) -> KYCValidationTransaction:
         """
         Create a new KYC validation transaction.
@@ -58,7 +77,8 @@ class KYCRepository:
                 user_id=user_id,
                 api_name=api_name,
                 status=status,
-                provider_name=provider_name
+                provider_name=provider_name,
+                http_status_code=http_status_code
             )
             transaction.save()
             logger.info(f"Created KYC validation transaction for user {user_id} with API {api_name}")

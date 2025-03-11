@@ -324,7 +324,9 @@ class AuthHandler:
         Returns:
             Dict[str, str]: A message indicating successful logout.
         """
-        if AuthHandler.delete_refresh_token(token_data.refresh_token):
+        if token_data.refresh_token:
+            AuthHandler.delete_refresh_token(token_data.refresh_token)
+            AuthHandler.delete_all_user_tokens(str(current_user.id))
             return {"message": "Successfully logged out"}
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

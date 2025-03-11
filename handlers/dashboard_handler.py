@@ -56,7 +56,7 @@ class DashboardHandler:
                 {
                     "date": stat["date"],
                     "count": stat["count"],
-                    "total_amount": stat["total_amount"]
+                    "total_amount": abs(stat["total_amount"])  # changes
                 }
                 for stat in stats
             ]

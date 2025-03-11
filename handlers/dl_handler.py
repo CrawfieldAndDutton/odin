@@ -14,42 +14,43 @@ from models.kyc_model import KYCValidationTransaction
 from repositories.user_repository import UserRepository
 from repositories.kyc_repository import KYCRepository
 
-from services.aitan_services import RCService
+from services.aitan_services import DLService
 
 
-class RCHandler:
+class DLHandler:
 
     def __init__(self):
         self.user_repository = UserRepository()
         self.kyc_repository = KYCRepository()
         self.user_ledger_transaction_handler = UserLedgerTransactionHandler()
 
-    def get_rc_kyc_details(self, reg_no: str, user_id: str) -> Tuple[dict, int]:
+    def get_dl_kyc_details(self, dl_no: str, dob: str, user_id: str) -> Tuple[dict, int]:
         """
-        Get RC KYC details, first checking cache then API.
+        Get DL KYC details, first checking cache then API.
 
         Args:
-            reg_no: registration number to verify
+            dl_no: DL number to verify
+            dob: DOB to verify
             user_id: ID of the user making the request
 
         Returns:
-            dict: RC verification details
+            dict: DL verification details
         """
         # Check if user has sufficient credits
-        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_RC_COST:
-            logger.error(f"User {user_id} has insufficient credits to verify RC {reg_no}")
+        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_DL_COST:
+            logger.error(f"User {user_id} has insufficient credits to verify DL {dl_no}")
             raise InsufficientCreditsException()
 
         transaction = self.kyc_repository.create_kyc_validation_transaction(
             user_id=user_id,
-            api_name=UserLedgerTransactionType.KYC_RC.value,
+            api_name=UserLedgerTransactionType.KYC_DL.value,
             status="ERROR",
             provider_name=KYCProvider.INTERNAL.value,
             http_status_code=500
         )
         start_time = time.time()
-        # Step 1: Check if the registration number is already cached
-        cached_details = self.__get_rc_kyc_details_from_db(reg_no)
+        # Step 1: Check if the DL is already cached
+        cached_details = self.__get_dl_kyc_details_from_db(dl_no)
         if cached_details:
             # Calculate the time taken to fetch from cache
             tat = (time.time() - start_time)
@@ -66,55 +67,59 @@ class RCHandler:
                 is_cached=True,
                 provider_name=KYCProvider.INTERNAL.value
             )
-            rc_verification_response = cached_details.kyc_provider_response
+            dl_verification_response = cached_details.kyc_provider_response
 
         else:
             # Step 2: If not cached, get from API
-            rc_verification_response = self.__get_rc_kyc_details_from_api(reg_no, transaction)
+            dl_verification_response = self.__get_dl_kyc_details_from_api(
+                dl_no, dob, transaction)
 
-        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_RC.value):
-            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC.value)
+        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_DL.value):
+            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_DL.value)
 
-        return rc_verification_response, transaction.http_status_code
+        return dl_verification_response, transaction.http_status_code
 
-    def __get_rc_kyc_details_from_db(self, reg_no: str) -> dict:
+    def __get_dl_kyc_details_from_db(self, dl_no: str) -> dict:
         """
-        Get RC details from database cache.
+        Get DL details from database cache.
 
         Args:
-            reg_no: registration number to verify
+            dl_no: DL number to verify
 
         Returns:
-            dict: Cached RC details or None if not found
+            dict: Cached DL details or None if not found
         """
         try:
             transaction = self.kyc_repository.get_kyc_validation_transaction(
-                api_name=UserLedgerTransactionType.KYC_RC.value,
-                identifier=reg_no,
-                kyc_service_billable_status=KYCServiceBillableStatus.KYC_RC
+                api_name=UserLedgerTransactionType.KYC_DL.value,
+                identifier=dl_no,
+                kyc_service_billable_status=KYCServiceBillableStatus.KYC_DL
             )
             if transaction and transaction.kyc_provider_response:
-                logger.info(f"Cache hit for RC {reg_no}")
+                logger.info(f"Cache hit for DL {dl_no}")
                 return transaction
             return None
         except Exception as e:
-            logger.error(f"Error fetching reg_no {reg_no} from cache: {str(e)}")
+            logger.error(f"Error fetching DL {dl_no} from cache: {str(e)}")
             return None
 
-    def __get_rc_kyc_details_from_api(self, reg_no: str, transaction: KYCValidationTransaction) -> dict:
+    def __get_dl_kyc_details_from_api(
+        self, dl_no: str, dob: str, transaction: KYCValidationTransaction
+    ) -> dict:
         """
-        Get RC details from external API.
+        Get DL details from external API.
 
         Args:
-            reg_no: registration number to verify
+            dl_no: DL number to verify
+            dob: DOB to verify
             transaction: KYC validation transaction object
 
         Returns:
-            dict: reg_no verification details from API
+            dict: DL verification details from API
         """
         try:
             # Call external API
-            response, tat = RCService.call_external_api(reg_no)
+            response, tat = DLService.call_external_api(dl_no, dob)
             external_response = response.json()
 
             # Update transaction with response details
@@ -123,37 +128,41 @@ class RCHandler:
                 http_status_code=response.status_code,
                 tat=tat,
                 message=external_response.get("message", "No message provided"),
-                kyc_transaction_details={"reg_no": reg_no},
-                kyc_provider_request={"reg_no": reg_no},
+                kyc_transaction_details={"dl_no": dl_no, "dob": dob},
+                kyc_provider_request={"dl_no": dl_no, "dob": dob},
                 kyc_provider_response=external_response,
-                status=self.__determine_status(response.status_code),
+                status=self.__determine_status(response.status_code, external_response.get("status_code", 0)),
                 is_cached=False,
                 provider_name=KYCProvider.AITAN.value
             )
             return external_response
 
         except Exception as e:
-            logger.error(f"Error fetching RC {reg_no} from API: {str(e)}")
+            logger.error(f"Error fetching DL {dl_no} from API: {str(e)}")
             raise e
 
-    def __determine_status(self, http_status_code: int) -> str:
+    def __determine_status(self, http_status_code: int, response_status_code: int) -> str:
         """
-        Determine the status of the RC verification.
+        Determine the status of the DL verification.
 
         Args:
             http_status_code: HTTP status code of the API response
+            response_status_code: Status code of the API response
 
         Returns:
-            str: Status of the RC verification
+            str: Status of the DL verification
         """
         status = "ERROR"
         if http_status_code == 200:
-            return "FOUND"
-        elif http_status_code == 206:
-            return "NOT_FOUND"
+            if response_status_code == 100:
+                status = "FOUND"
+            elif response_status_code == 101:
+                status = "FOUND"
+            elif response_status_code == 102:
+                status = "NOT_FOUND"
+            else:
+                status = "ERROR"
         elif http_status_code == 400:
-            return "BAD_REQUEST"
-        elif http_status_code == 429:
-            return "TOO_MANY_REQUESTS"
+            status = "BAD_REQUEST"
 
         return status

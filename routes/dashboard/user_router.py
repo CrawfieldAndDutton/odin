@@ -42,7 +42,7 @@ def login(form_data: security.OAuth2PasswordRequestForm = Depends()) -> Token:
 
 
 @auth_router.post("/auth/refresh", response_model=TokenRefresh, tags=["Auth"])
-async def refresh_token(token_data: RefreshTokenRequest) -> TokenRefresh:
+def refresh_token(token_data: RefreshTokenRequest) -> TokenRefresh:
     """
     Refresh an access token using a valid refresh token.
 
@@ -52,11 +52,11 @@ async def refresh_token(token_data: RefreshTokenRequest) -> TokenRefresh:
     Returns:
         TokenRefresh: New access token and refresh token.
     """
-    return await AuthHandler.refresh_user_token(token_data)
+    return AuthHandler.refresh_user_token(token_data)
 
 
 @auth_router.post("/auth/logout", tags=["Auth"])
-async def logout(
+def logout(
     token_data: RefreshTokenRequest,
     current_user: UserModel = Depends(AuthHandler.get_current_user)
 ):
@@ -70,11 +70,11 @@ async def logout(
     Returns:
         JSONResponse: Success or error message.
     """
-    return await AuthHandler.logout_user(token_data, current_user)
+    return AuthHandler.logout_user(token_data, current_user)
 
 
 @auth_router.post("/auth/register", response_model=User, status_code=status.HTTP_201_CREATED, tags=["Auth"])
-async def register(user_data: UserCreate) -> User:
+def register(user_data: UserCreate) -> User:
     """
     Register a new user.
 
@@ -84,13 +84,13 @@ async def register(user_data: UserCreate) -> User:
     Returns:
         User: Details of the newly registered user.
     """
-    return await AuthHandler.register_new_user(user_data)
+    return AuthHandler.register_new_user(user_data)
 
 # User Routes
 
 
 @auth_router.get("/users/me", response_model=User, tags=["Fetch Users"])
-async def read_users_me(
+def read_users_me(
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> Any:
     """
@@ -102,11 +102,11 @@ async def read_users_me(
     Returns:
         User: Details of the currently authenticated user.
     """
-    return await AuthHandler.get_current_user_details(current_user)
+    return AuthHandler.get_current_user_details(current_user)
 
 
 @auth_router.put("/users/me", response_model=User, tags=["Fetch Users"])
-async def update_user_me(
+def update_user_me(
     user_data: UserUpdate,
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> Any:
@@ -120,12 +120,12 @@ async def update_user_me(
     Returns:
         User: Updated details of the currently authenticated user.
     """
-    return await AuthHandler.update_current_user(user_data, current_user)
+    return AuthHandler.update_current_user(user_data, current_user)
 
 # Dashboard Routes
 
 
-@auth_router.get("/dashboard/summary", response_model=APISuccessResponse, tags=["Dashboard"])
+@auth_router.get("/summary/fetch", response_model=APISuccessResponse, tags=["Dashboard"])
 async def get_summary(
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> APISuccessResponse:
@@ -157,7 +157,7 @@ async def get_summary(
         )
 
 
-@auth_router.get("/dashboard/pending-credits", response_model=APISuccessResponse, tags=["Dashboard"])
+@auth_router.get("/pending-credits/fetch", response_model=APISuccessResponse, tags=["Dashboard"])
 async def get_pending_credits(
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> APISuccessResponse:
@@ -189,7 +189,7 @@ async def get_pending_credits(
         )
 
 
-@auth_router.get("/dashboard/weekly-stats/{service_name}", response_model=APISuccessResponse, tags=["Dashboard"])
+@auth_router.get("/weekly-stats/fetch/{service_name}", response_model=APISuccessResponse, tags=["Dashboard"])
 async def get_weekly_stats(
     service_name: str,
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)

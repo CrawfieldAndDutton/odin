@@ -21,6 +21,9 @@ class AppConfiguration:
     RAPID_API_KEY = os.getenv("RAPID_API_KEY")
     EXTERNAL_API_URL_PAN = os.getenv("EXTERNAL_API_URL_PAN")
     EXTERNAL_API_URL_VEHICLE = os.getenv("EXTERNAL_API_URL_VEHICLE")
+    EXTERNAL_API_URL_VOTER = os.getenv("EXTERNAL_API_URL_VOTER")
+    EXTERNAL_API_URL_DL = os.getenv("EXTERNAL_API_URL_DL")
+    EXTERNAL_API_URL_PASSPORT = os.getenv("EXTERNAL_API_URL_PASSPORT")
     MONGO_URI = os.environ["MONGO_URI"]
     MAIN_DB = os.getenv("MAIN_DB", "kyc_fabric_db")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "YOUR_SECRET_KEY_HERE")  # Change in production!
@@ -78,6 +81,16 @@ class UserLedgerTransactionType(BaseEnum):
     EV_EMPLOYMENT_LATEST = "EV_EMPLOYMENT_LATEST"
     EV_EMPLOYMENT_HISTORY = "EV_EMPLOYMENT_HISTORY"
     KYB_GSTIN = "KYB_GSTIN"
+
+
+class KYCServiceBillableStatus:
+    """Enum for KYC service billable status."""
+
+    KYC_PAN = ["FOUND", "NOT_FOUND"]
+    KYC_RC = ["FOUND", "NOT_FOUND"]
+    KYC_VOTER = ["FOUND", "NOT_FOUND"]
+    KYC_DL = ["FOUND", "NOT_FOUND"]
+    KYC_PASSPORT = ["FOUND", "NOT_FOUND"]
 
 
 class KYCProvider(BaseEnum):

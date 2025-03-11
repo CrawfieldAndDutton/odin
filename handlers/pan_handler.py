@@ -1,6 +1,9 @@
+# Standard library imports
 from typing import Tuple
+import time
 
-from dependencies.configuration import KYCProvider, ServicePricing, UserLedgerTransactionType
+# Local application imports
+from dependencies.configuration import KYCProvider, ServicePricing, UserLedgerTransactionType, KYCServiceBillableStatus
 from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
 
@@ -41,17 +44,20 @@ class PanHandler:
             user_id=user_id,
             api_name=UserLedgerTransactionType.KYC_PAN.value,
             status="ERROR",
-            provider_name=KYCProvider.INTERNAL.value
+            provider_name=KYCProvider.INTERNAL.value,
+            http_status_code=500
         )
-
+        start_time = time.time()
         # Step 1: Check if the PAN is already cached
         cached_details = self.__get_pan_kyc_details_from_db(pan)
         if cached_details:
+            # Calculate the time taken to fetch from cache
+            tat = (time.time() - start_time)
             # Update transaction with response details
             self.kyc_repository.update_kyc_validation_transaction(
                 transaction,
                 http_status_code=cached_details.http_status_code,
-                tat=cached_details.tat,
+                tat=tat,
                 message=cached_details.message,
                 kyc_transaction_details=cached_details.kyc_transaction_details,
                 kyc_provider_request=cached_details.kyc_provider_request,
@@ -64,10 +70,12 @@ class PanHandler:
 
         else:
             # Step 2: If not cached, get from API
-            pan_verification_response = self.__get_pan_kyc_details_from_api(pan, transaction)
+            pan_verification_response = self.__get_pan_kyc_details_from_api(
+                pan, transaction)
 
-        if transaction.status == "FOUND":
-            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_PAN.value)
+        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_PAN.value):
+            self.user_ledger_transaction_handler.deduct_credits(
+                user_id, UserLedgerTransactionType.KYC_PAN.value)
 
         return pan_verification_response, transaction.http_status_code
 
@@ -85,7 +93,7 @@ class PanHandler:
             transaction = self.kyc_repository.get_kyc_validation_transaction(
                 api_name=UserLedgerTransactionType.KYC_PAN.value,
                 identifier=pan,
-                status="FOUND"
+                kyc_service_billable_status=KYCServiceBillableStatus.KYC_PAN
             )
             if transaction and transaction.kyc_provider_response:
                 logger.info(f"Cache hit for PAN {pan}")
