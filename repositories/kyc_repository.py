@@ -34,12 +34,6 @@ class KYCRepository:
                     kyc_transaction_details__epic_no=identifier,
                     status__in=kyc_service_billable_status,
                 ).first()
-            elif api_name == UserLedgerTransactionType.KYC_AADHAAR.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__aadhaar_no=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
             elif api_name == UserLedgerTransactionType.KYC_DL.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
