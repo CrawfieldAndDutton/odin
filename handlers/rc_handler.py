@@ -1,323 +1,157 @@
-# Standard library imports
-from datetime import datetime
-from typing import Dict, Any, Optional, Union
+from typing import Tuple
+import time
 
-# Third-party library imports
-from fastapi.responses import JSONResponse
-from fastapi import status
-
-# Local application imports
-from dependencies.configuration import ServicePricing, UserLedgerTransactionType
+from dependencies.configuration import KYCProvider, ServicePricing, UserLedgerTransactionType
 from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
-
-from dto.kyc_dto import VehicleVerificationRequest
-from dto.common_dto import APISuccessResponse
 
 from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 
 from models.kyc_model import KYCValidationTransaction
 
-from repositories.kyc_repository import KYCRepository
 from repositories.user_repository import UserRepository
+from repositories.kyc_repository import KYCRepository
+
 from services.aitan_services import RCService
 
 
 class RCHandler:
 
     def __init__(self):
-        self.ledger_handler = UserLedgerTransactionHandler()
         self.user_repository = UserRepository()
+        self.kyc_repository = KYCRepository()
+        self.user_ledger_transaction_handler = UserLedgerTransactionHandler()
 
-    def verify_vehicle(
-        self,
-        request: VehicleVerificationRequest,
-        user_id: str
-    ) -> Union[APISuccessResponse, JSONResponse]:
+    def get_rc_kyc_details(self, reg_no: str, user_id: str) -> Tuple[dict, int]:
         """
-        Verify vehicle using registration number.
+        Get RC KYC details, first checking cache then API.
 
         Args:
-            request: Vehicle verification request containing registration number
+            reg_no: registration number to verify
             user_id: ID of the user making the request
 
         Returns:
-            VehicleVerificationResponse or JSONResponse
+            dict: RC verification details
         """
-        reg_no = request.reg_no
-        start_time = datetime.now()
-
-        logger.info(f"Starting vehicle verification for user {user_id} with registration number {reg_no}")
-
         # Check if user has sufficient credits
         if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_RC_COST:
             logger.error(f"User {user_id} has insufficient credits to verify RC {reg_no}")
             raise InsufficientCreditsException()
 
-        # Check for cached record
-        cached_record = KYCRepository.get_cached_record_vehicle(
-            UserLedgerTransactionType.KYC_RC.value, {"reg_no": reg_no}, user_id
+        transaction = self.kyc_repository.create_kyc_validation_transaction(
+            user_id=user_id,
+            api_name=UserLedgerTransactionType.KYC_RC.value,
+            status="ERROR",
+            provider_name=KYCProvider.INTERNAL.value,
+            http_status_code=500
         )
-        logger.info(f"Cache check result for reg_no {reg_no}: {'Hit' if cached_record else 'Miss'}")
+        start_time = time.time()
+        # Step 1: Check if the registration number is already cached
+        cached_details = self.__get_rc_kyc_details_from_db(reg_no)
+        if cached_details:
+            # Calculate the time taken to fetch from cache
+            tat = (time.time() - start_time)
+            # Update transaction with response details
+            self.kyc_repository.update_kyc_validation_transaction(
+                transaction,
+                http_status_code=cached_details.http_status_code,
+                tat=tat,
+                message=cached_details.message,
+                kyc_transaction_details=cached_details.kyc_transaction_details,
+                kyc_provider_request=cached_details.kyc_provider_request,
+                kyc_provider_response=cached_details.kyc_provider_response,
+                status=cached_details.status,
+                is_cached=True,
+                provider_name=KYCProvider.INTERNAL.value
+            )
+            rc_verification_response = cached_details.kyc_provider_response
 
-        if cached_record:
-            logger.info(f'Cache hit: Using INTERNAL data for reg_no {reg_no}')
-            end_time = datetime.now()
-            tat = (end_time - start_time).total_seconds()
-            logger.info(f"Cache TAT: {tat} seconds")
-            return RCHandler._handle_cached_record(cached_record, reg_no, user_id, tat)
+        else:
+            # Step 2: If not cached, get from API
+            rc_verification_response = self.__get_rc_kyc_details_from_api(reg_no, transaction)
 
+        if transaction.http_status_code == 200 or transaction.http_status_code == 206:
+            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC.value)
+
+        return rc_verification_response, transaction.http_status_code
+
+    def __get_rc_kyc_details_from_db(self, reg_no: str) -> dict:
+        """
+        Get RC details from database cache.
+
+        Args:
+            reg_no: registration number to verify
+
+        Returns:
+            dict: Cached RC details or None if not found
+        """
         try:
-            logger.info(f"Calling external API for reg_no {reg_no}")
+            transaction = self.kyc_repository.get_kyc_validation_transaction(
+                api_name=UserLedgerTransactionType.KYC_RC.value,
+                identifier=reg_no,
+                http_status_code=[200, 206]
+            )
+            if transaction and transaction.kyc_provider_response:
+                logger.info(f"Cache hit for RC {reg_no}")
+                return transaction
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching reg_no {reg_no} from cache: {str(e)}")
+            return None
+
+    def __get_rc_kyc_details_from_api(self, reg_no: str, transaction: KYCValidationTransaction) -> dict:
+        """
+        Get RC details from external API.
+
+        Args:
+            reg_no: registration number to verify
+            transaction: KYC validation transaction object
+
+        Returns:
+            dict: reg_no verification details from API
+        """
+        try:
+            # Call external API
             response, tat = RCService.call_external_api(reg_no)
             external_response = response.json()
-            logger.info(f"External API response received with status code {response.status_code} in {tat} seconds")
 
-            status = RCHandler._determine_status(response)
-            logger.info(f"Determined status: {status}")
-
-            transaction = RCHandler._create_transaction(
-                response, tat, status, user_id,  {"reg_no": reg_no}, external_response, is_cached=True
-            )
-            logger.info(f"Created transaction: {transaction}")
-            transaction.save()
-            logger.info("Saved transaction to database")
-
-            if status in ["FOUND", "NOT_FOUND"]:
-                self.ledger_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC.value)
-
-            if response.status_code == 206:
-                logger.info(f"Returning partial JSONResponse with status code: {response.status_code}")
-                partial_response = JSONResponse(
-                    status_code=response.status_code,
-                    content={
-                        "http_status_code": response.status_code,
-                        "message": "Success",
-                        "error": external_response.get("message")}
-                )
-                logger.info(f"Error response content: {partial_response.body}")
-                return partial_response
-            if response.status_code != 200 and response.status_code != 206:
-                logger.info(f"Returning error JSONResponse with status code: {response.status_code}")
-                error_response = JSONResponse(
-                    status_code=response.status_code,
-                    content={
-                        "http_status_code": response.status_code,
-                        "message": "Failure",
-                        "error": external_response.get("message")}
-                )
-                logger.info(f"Error response content: {error_response.body}")
-                return error_response
-            logger.info(f"Returning successful vehicle verification response for user {user_id}")
-            success_response = APISuccessResponse(
+            # Update transaction with response details
+            self.kyc_repository.update_kyc_validation_transaction(
+                transaction,
                 http_status_code=response.status_code,
-                message="Success",
-                result=external_response.get("result", {}),
+                tat=tat,
+                message=external_response.get("message", "No message provided"),
+                kyc_transaction_details={"reg_no": reg_no},
+                kyc_provider_request={"reg_no": reg_no},
+                kyc_provider_response=external_response,
+                status=self.__determine_status(response.status_code),
+                is_cached=False,
+                provider_name=KYCProvider.AITAN.value
             )
-            logger.info(f"Success response: {success_response}")
-            return success_response
+            return external_response
 
         except Exception as e:
-            logger.error(f"Exception occurred during vehicle verification: {str(e)}", exc_info=True)
-            return RCHandler._handle_exception(e, reg_no, user_id)
+            logger.error(f"Error fetching RC {reg_no} from API: {str(e)}")
+            raise e
 
-    @staticmethod
-    def _handle_cached_record(
-        cached_record: Any,
-        reg_no: str,
-        user_id: str,
-        tat: float
-    ) -> Union[APISuccessResponse, JSONResponse]:
+    def __determine_status(self, http_status_code: int) -> str:
         """
-        Handle cached vehicle record.
+        Determine the status of the RC verification.
 
         Args:
-            cached_record: Cached record from database
-            reg_no: Vehicle registration number
-            user_id: ID of the user making the request
-            tat: Turn around time in seconds
+            http_status_code: HTTP status code of the API response
 
         Returns:
-            VehicleVerificationResponse or JSONResponse
+            str: Status of the RC verification
         """
-        logger.info(f"Handling cached record for reg_no {reg_no}")
-
-        if cached_record.http_status_code == 200:
-            status = "FOUND"
-        elif cached_record.http_status_code == 206:
-            status = "NOT_FOUND"
-        elif cached_record.http_status_code == 400:
-            status = "BAD_REQUEST"
-        elif cached_record.http_status_code == 429:
-            status = "TOO_MANY_REQUESTS"
-        else:
-            status = "ERROR"
-
-        logger.info(f"Cached record status: {status}")
-
-        transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_RC.value,
-            provider_name="INTERNAL",
-            is_cached=False,
-            tat=tat,
-            http_status_code=cached_record.http_status_code,
-            status=status,
-            message=cached_record.message,
-            kyc_transaction_details={"reg_no": reg_no},
-            kyc_provider_request=cached_record.kyc_provider_request,
-            kyc_provider_response=cached_record.kyc_provider_response,
-            user_id=user_id,
-        )
-
-        logger.info(f"Created cached transaction: {transaction}")
-        transaction.save()
-        logger.info("Saved cached transaction to database")
-        if cached_record.http_status_code == 206:
-            logger.info(f"Returning partial JSONResponse with status code: {cached_record.http_status_code}")
-            partial_response = JSONResponse(
-                status_code=cached_record.http_status_code,
-                content={
-                    "http_status_code": cached_record.http_status_code,
-                    "message": "Success",
-                    "error": cached_record.kyc_provider_response.get("message")
-                }
-            )
-            logger.info(f"Error response content: {partial_response.body}")
-            return partial_response
-        if cached_record.http_status_code != 200 and cached_record.http_status_code != 206:
-            logger.info(f"Returning cached error response with status code: {cached_record.http_status_code}")
-            error_response = JSONResponse(
-                status_code=cached_record.http_status_code,
-                content={
-                    "http_status_code": cached_record.http_status_code,
-                    "message": "Failure",
-                    "error": cached_record.message}
-            )
-            logger.info(f"Cached error response content: {error_response.body}")
-            return error_response
-
-        logger.info(f"Returning cached successful response for user {user_id}")
-        success_response = APISuccessResponse(
-            http_status_code=cached_record.http_status_code,
-            message="Success",
-            result=cached_record.kyc_provider_response.get("result", {}),
-        )
-        logger.info(f"Cached success response: {success_response}")
-        return success_response
-
-    @staticmethod
-    def _determine_status(response: Any) -> str:
-        """
-        Determine status from response status code.
-
-        Args:
-            response: Response object with status_code attribute
-
-        Returns:
-            String representing the status
-        """
-        if response.status_code == 200:
+        status = "ERROR"
+        if http_status_code == 200:
             return "FOUND"
-        elif response.status_code == 206:
+        elif http_status_code == 206:
             return "NOT_FOUND"
-        elif response.status_code == 400:
+        elif http_status_code == 400:
             return "BAD_REQUEST"
-        elif response.status_code == 429:
+        elif http_status_code == 429:
             return "TOO_MANY_REQUESTS"
-        return "ERROR"
 
-    @staticmethod
-    def _create_transaction(
-        response: Any,
-        tat: float,
-        status: str,
-        user_id: str,
-        payload: Optional[Dict[str, Any]] = None,
-        external_response: Optional[Dict[str, Any]] = None,
-        is_cached: bool = True
-    ) -> KYCValidationTransaction:
-        """
-        Create KYC validation transaction.
-
-        Args:
-            response: Response object
-            tat: Turn around time in seconds
-            status: Transaction status
-            user_id: ID of the user making the request
-            payload: Request payload
-            external_response: External API response
-            is_cached: when the record is cached is True, otherwise False
-
-        Returns:
-            KYCValidationTransaction object
-        """
-        provider_name = "AITAN" if is_cached else "INTERNAL"
-        logger.info(f"Creating transaction with provider {provider_name}, status {status}, TAT {tat}s")
-
-        if payload is None:
-            payload = {}
-
-        transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_RC.value,
-            provider_name=provider_name,
-            is_cached=is_cached,
-            tat=tat,
-            http_status_code=response.status_code,
-            status=status,
-            message=external_response.get("message", "No message provided") if external_response else response.message,
-            kyc_transaction_details={"reg_no": payload.get("reg_no", "")},
-            kyc_provider_request=payload,
-            kyc_provider_response=external_response,
-            user_id=user_id,
-        )
-
-        logger.info(f"Transaction details: {transaction}")
-        return transaction
-
-    @staticmethod
-    def _handle_exception(
-        e: Exception,
-        reg_no: str,
-        user_id: str,
-    ) -> JSONResponse:
-        """
-        Handle exceptions during vehicle verification.
-
-        Args:
-            e: Exception object
-            reg_no: Vehicle registration number
-            user_id: ID of the user making the request
-
-        Returns:
-            JSONResponse with error details
-        """
-        error_message = f"An unexpected error occurred: {str(e)}"
-        logger.error(error_message, exc_info=True)
-
-        transaction = KYCValidationTransaction(
-            api_name=UserLedgerTransactionType.KYC_RC.value,
-            provider_name="AITAN",
-            is_cached=False,
-            tat=0,
-            http_status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            status="ERROR",
-            message=error_message,
-            kyc_transaction_details={"reg_no": reg_no},
-            kyc_provider_request={"reg_no": reg_no},
-            kyc_provider_response={},
-            user_id=user_id,
-        )
-
-        logger.info(f"Created error transaction: {transaction}")
-        transaction.save()
-        logger.info("Saved error transaction to database")
-
-        error_response = JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "http_status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                "message": "Failure",
-                "error": error_message}
-        )
-        logger.info(f"Error response content: {error_response.body}")
-        return error_response
+        return status
