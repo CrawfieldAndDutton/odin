@@ -83,6 +83,16 @@ class UserLedgerTransactionType(BaseEnum):
     KYB_GSTIN = "KYB_GSTIN"
 
 
+class KYCServiceBillableStatus:
+    """Enum for KYC service billable status."""
+
+    KYC_PAN = ["FOUND", "NOT_FOUND"]
+    KYC_RC = ["FOUND", "NOT_FOUND"]
+    KYC_VOTER = ["FOUND", "NOT_FOUND"]
+    KYC_DL = ["FOUND", "NOT_FOUND"]
+    KYC_PASSPORT = ["FOUND", "NOT_FOUND"]
+
+
 class KYCProvider(BaseEnum):
     """Enum for KYC providers."""
 

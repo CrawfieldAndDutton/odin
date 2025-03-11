@@ -1,7 +1,9 @@
+# Standard library imports
 from typing import Tuple
 import time
 
-from dependencies.configuration import KYCProvider, ServicePricing, UserLedgerTransactionType
+# Local application imports
+from dependencies.configuration import KYCProvider, ServicePricing, UserLedgerTransactionType, KYCServiceBillableStatus
 from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
 
@@ -70,7 +72,7 @@ class RCHandler:
             # Step 2: If not cached, get from API
             rc_verification_response = self.__get_rc_kyc_details_from_api(reg_no, transaction)
 
-        if transaction.http_status_code == 200 or transaction.http_status_code == 206:
+        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_RC.value):
             self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC.value)
 
         return rc_verification_response, transaction.http_status_code
@@ -89,7 +91,7 @@ class RCHandler:
             transaction = self.kyc_repository.get_kyc_validation_transaction(
                 api_name=UserLedgerTransactionType.KYC_RC.value,
                 identifier=reg_no,
-                http_status_code=[200, 206]
+                kyc_service_billable_status=KYCServiceBillableStatus.KYC_RC
             )
             if transaction and transaction.kyc_provider_response:
                 logger.info(f"Cache hit for RC {reg_no}")

@@ -1,7 +1,9 @@
+# Standard library imports
 from typing import Tuple
 import time
 
-from dependencies.configuration import KYCProvider, ServicePricing, UserLedgerTransactionType
+# Local application imports
+from dependencies.configuration import KYCProvider, ServicePricing, UserLedgerTransactionType, KYCServiceBillableStatus
 from dependencies.exceptions import InsufficientCreditsException
 from dependencies.logger import logger
 
@@ -68,10 +70,12 @@ class PanHandler:
 
         else:
             # Step 2: If not cached, get from API
-            pan_verification_response = self.__get_pan_kyc_details_from_api(pan, transaction)
+            pan_verification_response = self.__get_pan_kyc_details_from_api(
+                pan, transaction)
 
-        if transaction.http_status_code == 200:
-            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_PAN.value)
+        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_PAN.value):
+            self.user_ledger_transaction_handler.deduct_credits(
+                user_id, UserLedgerTransactionType.KYC_PAN.value)
 
         return pan_verification_response, transaction.http_status_code
 
@@ -89,7 +93,7 @@ class PanHandler:
             transaction = self.kyc_repository.get_kyc_validation_transaction(
                 api_name=UserLedgerTransactionType.KYC_PAN.value,
                 identifier=pan,
-                http_status_code=200
+                kyc_service_billable_status=KYCServiceBillableStatus.KYC_PAN
             )
             if transaction and transaction.kyc_provider_response:
                 logger.info(f"Cache hit for PAN {pan}")

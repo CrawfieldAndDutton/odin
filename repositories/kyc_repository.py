@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Optional, Union
+from typing import Optional
 
 # Third-party library imports
 from mongoengine import DoesNotExist
@@ -13,47 +13,44 @@ from models.kyc_model import KYCValidationTransaction
 class KYCRepository:
 
     def get_kyc_validation_transaction(
-        self, api_name: str, identifier: str, http_status_code: Union[int, list[int]]
+        self, api_name: str, identifier: str, kyc_service_billable_status: list[str]
     ) -> Optional[KYCValidationTransaction]:
         try:
-            # Ensure http_status_code is a list
-            if isinstance(http_status_code, int):
-                http_status_code = [http_status_code]
             if api_name == UserLedgerTransactionType.KYC_PAN.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__pan=identifier,
-                    http_status_code__in=http_status_code,
+                    status__in=kyc_service_billable_status,
                 ).first()
             elif api_name == UserLedgerTransactionType.KYC_RC.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__reg_no=identifier,
-                    http_status_code__in=http_status_code,
+                    status__in=kyc_service_billable_status,
                 ).first()
             elif api_name == UserLedgerTransactionType.KYC_VOTER.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__epic_no=identifier,
-                    http_status_code__in=http_status_code,
+                    status__in=kyc_service_billable_status,
                 ).first()
             elif api_name == UserLedgerTransactionType.KYC_AADHAAR.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__aadhaar_no=identifier,
-                    http_status_code__in=http_status_code,
+                    status__in=kyc_service_billable_status,
                 ).first()
             elif api_name == UserLedgerTransactionType.KYC_DL.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__dl_no=identifier,
-                    http_status_code__in=http_status_code,
+                    status__in=kyc_service_billable_status,
                 ).first()
             elif api_name == UserLedgerTransactionType.KYC_PASSPORT.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__file_number=identifier,
-                    http_status_code__in=http_status_code,
+                    status__in=kyc_service_billable_status,
                 ).first()
         except DoesNotExist:
             return None

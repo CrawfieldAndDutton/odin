@@ -1,5 +1,6 @@
 # Standard library imports
 from typing import Union
+import json
 
 # Third-party library imports
 from fastapi import APIRouter, Depends, status
@@ -56,9 +57,9 @@ def verify_pan(
             )
 
         return APISuccessResponse(
+            http_status_code=http_status_code,
             message="PAN Verification Successful",
             result=pan_verification_response,
-            http_status_code=http_status_code
         )
     except InsufficientCreditsException as e:
         return JSONResponse(
@@ -155,9 +156,9 @@ def verify_voter(
             )
 
         return APISuccessResponse(
+            http_status_code=http_status_code,
             message="VOTER Verification Successful",
-            result=voter_verification_response.get("result", {}),
-            http_status_code=http_status_code
+            result=voter_verification_response,
         )
     except InsufficientCreditsException as e:
         return JSONResponse(
@@ -192,6 +193,7 @@ def verify_dl(
             dob=request.dob,
             user_id=str(user.id)
         )
+        dl_verification_response = json.loads(json.dumps(dl_verification_response))
         logger.info(f"DL Verification Response: {dl_verification_response}")
 
         if http_status_code != status.HTTP_200_OK:
@@ -203,11 +205,10 @@ def verify_dl(
                     "error": dl_verification_response.get('message')
                 }
             )
-
         return APISuccessResponse(
             http_status_code=http_status_code,
             message="DL Verification Successful",
-            result=dl_verification_response.get("result", {}),
+            result=dl_verification_response,
         )
     except InsufficientCreditsException as e:
         return JSONResponse(
@@ -215,7 +216,7 @@ def verify_dl(
             content={"message": str(e.detail)}
         )
     except Exception as e:
-        logger.error(f"Error in verify_dl: {str(e)}")
+        logger.error(f"Error in verify_passport: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"message": str(e)}
@@ -259,7 +260,7 @@ def verify_passport(
         return APISuccessResponse(
             http_status_code=http_status_code,
             message="PASSPORT Verification Successful",
-            result=passport_verification_response.get("result", {}),
+            result=passport_verification_response,
         )
     except InsufficientCreditsException as e:
         return JSONResponse(
