@@ -108,7 +108,7 @@ def verify_vehicle(
         return APISuccessResponse(
             http_status_code=http_status_code,
             message="RC Verification Successful",
-            result=rc_verification_response.get("result", {}),
+            result=rc_verification_response,
         )
     except InsufficientCreditsException as e:
         return JSONResponse(
