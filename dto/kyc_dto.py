@@ -40,3 +40,7 @@ class PassportVerificationRequest(BaseModel):
         Validate and convert the dob to dd-mm-yyyy format.
         """
         return convert_to_dd_mm_yyyy(value)
+
+
+class AadhaarVerificationRequest(BaseModel):
+    aadhaar: str = Field(..., description="Aadhaar Number to validate")
