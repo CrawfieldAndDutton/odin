@@ -94,7 +94,7 @@ class UserLedgerTransactionHandler:
             "Credits Purchased"
         )
 
-    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> (Dict, int):
+    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[UserLedgerTransaction], int]:
         """
         Get all ledger transactions for a user in a paginated manner.
 
