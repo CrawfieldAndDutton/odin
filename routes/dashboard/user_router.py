@@ -244,11 +244,11 @@ def get_ledger_history(
         HTTPException: If there's an error fetching ledger history.
     """
     try:
-        result = UserLedgerTransactionHandler().get_user_ledger_transactions(str(current_user.id), page)
+        result, total_transactions = UserLedgerTransactionHandler().get_user_ledger_transactions(str(current_user.id), page)
         return APISuccessResponse(
             http_status_code=status.HTTP_200_OK,
             message="Successfully retrieved ledger history",
-            result=result
+            result={"ledger_transactions": result, "total_transactions": total_transactions}
         )
     except Exception:
         logger.exception(f"Error fetching ledger history for user {current_user.id}")

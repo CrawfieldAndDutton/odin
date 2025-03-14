@@ -94,7 +94,7 @@ class UserLedgerTransactionHandler:
             "Credits Purchased"
         )
 
-    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> List[UserLedgerTransaction]:
+    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> (Dict, int):
         """
         Get all ledger transactions for a user in a paginated manner.
 
@@ -103,7 +103,7 @@ class UserLedgerTransactionHandler:
             page: The page number to get
 
         Returns:
-            List[UserLedgerTransaction]: The list of ledger transactions
+            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the total number of transactions
         """
         if page < 1:
             # Handle invalid page number
@@ -111,4 +111,6 @@ class UserLedgerTransactionHandler:
 
         limit = 100
         offset = (page - 1) * limit
-        return self.ledger_repository.get_user_ledger_transactions(user_id, limit, offset)
+        ledger_transactions = self.ledger_repository.get_user_ledger_transactions(user_id, limit, offset)
+        total_transactions = len(ledger_transactions)
+        return ledger_transactions[offset:offset+limit], total_transactions
