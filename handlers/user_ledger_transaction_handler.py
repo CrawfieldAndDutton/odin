@@ -87,8 +87,13 @@ class UserLedgerTransactionHandler:
         Returns:
             UserLedgerTransaction: The new transaction if successful, None otherwise
         """
-        return self.ledger_repository.insert_ledger_txn_for_user(user_id, UserLedgerTransactionType.CREDITS, amount, "Credits Purchased")
-        
+        return self.ledger_repository.insert_ledger_txn_for_user(
+            user_id, 
+            UserLedgerTransactionType.CREDITS,
+            amount, 
+            "Credits Purchased"
+        )
+
     def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> List[UserLedgerTransaction]:
         """
         Get all ledger transactions for a user in a paginated manner.
