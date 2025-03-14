@@ -88,9 +88,9 @@ class UserLedgerTransactionHandler:
             UserLedgerTransaction: The new transaction if successful, None otherwise
         """
         return self.ledger_repository.insert_ledger_txn_for_user(
-            user_id, 
+            user_id,
             UserLedgerTransactionType.CREDITS,
-            amount, 
+            amount,
             "Credits Purchased"
         )
 
