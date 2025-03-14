@@ -102,3 +102,11 @@ class UserLedgerTransactionRepository:
         except Exception as e:
             logger.error(f"Error getting weekly service stats for user {user_id}: {str(e)}")
             return []
+    
+    def get_user_ledger_transactions(self, user_id: str, limit: int = 100, offset: int = 0) -> List[UserLedgerTransaction]:
+        """Get all ledger transactions for a user."""
+        try:
+            return UserLedgerTransaction.objects(user_id=user_id).order_by('-created_at')[offset:offset+limit]
+        except Exception as e:
+            logger.exception(f"Error getting ledger transactions for user {user_id}: {str(e)}")
+            return []

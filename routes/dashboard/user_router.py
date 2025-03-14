@@ -17,6 +17,7 @@ from dto.common_dto import APISuccessResponse
 
 from handlers.auth_handlers import AuthHandler
 from handlers.dashboard_handler import DashboardHandler
+from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 from dependencies.logger import logger
 
 from models.user_model import User as UserModel
@@ -126,7 +127,7 @@ def update_user_me(
 
 
 @auth_router.get("/summary/fetch", response_model=APISuccessResponse, tags=["Dashboard"])
-async def get_summary(
+def get_summary(
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> APISuccessResponse:
     """
@@ -158,7 +159,7 @@ async def get_summary(
 
 
 @auth_router.get("/pending-credits/fetch", response_model=APISuccessResponse, tags=["Dashboard"])
-async def get_pending_credits(
+def get_pending_credits(
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> APISuccessResponse:
     """
@@ -190,7 +191,7 @@ async def get_pending_credits(
 
 
 @auth_router.get("/weekly-stats/fetch/{service_name}", response_model=APISuccessResponse, tags=["Dashboard"])
-async def get_weekly_stats(
+def get_weekly_stats(
     service_name: str,
     current_user: UserModel = Depends(AuthHandler.get_current_active_user)
 ) -> APISuccessResponse:
@@ -220,5 +221,39 @@ async def get_weekly_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch weekly statistics",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+
+@auth_router.get("/ledger-history/fetch", response_model=APISuccessResponse, tags=["Dashboard"])
+def get_ledger_history(
+    page: int = 1,
+    current_user: UserModel = Depends(AuthHandler.get_current_active_user)
+) -> APISuccessResponse:
+    """
+    Get ledger history for the user.
+
+    Args:
+        page: Page number to get. (Each page contains 100 transactions)
+        current_user: Authenticated user.
+
+    Returns:
+        APISuccessResponse: Response containing ledger history.
+
+    Raises:
+        HTTPException: If there's an error fetching ledger history.
+    """
+    try:
+        result = UserLedgerTransactionHandler().get_user_ledger_transactions(str(current_user.id), page)
+        return APISuccessResponse(
+            http_status_code=status.HTTP_200_OK,
+            message="Successfully retrieved ledger history",
+            result=result
+        )
+    except Exception:
+        logger.exception(f"Error fetching ledger history for user {current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch ledger history",
             headers={"WWW-Authenticate": "Bearer"}
         )
