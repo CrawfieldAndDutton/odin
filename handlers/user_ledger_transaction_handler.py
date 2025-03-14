@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Optional
+from typing import Optional, List
 
 # Local application imports
 from dependencies.configuration import ServicePricing, UserLedgerTransactionType
@@ -66,7 +66,7 @@ class UserLedgerTransactionHandler:
             new_txn = self.ledger_repository.insert_ledger_txn_for_user(
                 user_id=user_id,
                 type=service_name,
-                amount=-amount,  # Negative amount for deduction
+                amount=-amount,
                 description=f"Credit deduction for {service_name}"
             )
 
@@ -75,3 +75,42 @@ class UserLedgerTransactionHandler:
         except Exception as e:
             logger.exception(f"Error deducting credits for user {user_id}: {str(e)}")
             return None
+
+    def increase_credits(self, user_id: str, amount: float) -> Optional[UserLedgerTransaction]:
+        """
+        Increase user credits.
+
+        Args:
+            user_id: The user ID to increase credits for
+            amount: The amount of credits to increase
+
+        Returns:
+            UserLedgerTransaction: The new transaction if successful, None otherwise
+        """
+        return self.ledger_repository.insert_ledger_txn_for_user(
+            user_id,
+            UserLedgerTransactionType.CREDITS,
+            amount,
+            "Credits Purchased"
+        )
+
+    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[UserLedgerTransaction], int]:
+        """
+        Get all ledger transactions for a user in a paginated manner.
+
+        Args:
+            user_id: The user ID to get ledger transactions for
+            page: The page number to get
+
+        Returns:
+            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the total number of transactions
+        """
+        if page < 1:
+            # Handle invalid page number
+            page = 1
+
+        limit = 100
+        offset = (page - 1) * limit
+        ledger_transactions = self.ledger_repository.get_user_ledger_transactions(user_id, limit, offset)
+        total_transactions = len(ledger_transactions)
+        return ledger_transactions[offset:offset+limit], total_transactions
