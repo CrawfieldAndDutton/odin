@@ -61,7 +61,6 @@ class RefreshToken(Document):
 
 
 class VerifiedUserInformation(Document):
-    user_id = StringField(required=True)
     phone_number = StringField(required=True, unique=True)
     email = StringField(required=True, unique=True)
     otp = StringField()

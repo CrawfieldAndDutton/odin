@@ -206,19 +206,19 @@ class UserRepository:
             raise
 
     @staticmethod
-    def create_user_otp(email: str, mobile: str, otp: str):
+    def create_user_otp(email: str, phone_number: str, otp: str):
         # Check if user already exists
-        existing_user = VerifiedUserInformation.objects.filter(email=email, mobile=mobile).first()
+        existing_user = VerifiedUserInformation.objects.filter(email=email, phone_number=phone_number).first()
         if existing_user:
-            # Update the OTP and mobile for existing user
+            # Update the OTP and phone_number for existing user
             existing_user.otp = otp
-            existing_user.mobile = mobile  # Update mobile number
+            existing_user.phone_number = phone_number  # Update phone_number number
             existing_user.is_verified = False  # Reset verification status
             existing_user.save()
             return existing_user
         else:
             # Create new user if doesn't exist
-            user = VerifiedUserInformation(email=email, mobile=mobile, otp=otp)
+            user = VerifiedUserInformation(email=email, phone_number=phone_number, otp=otp)
             user.save()
             return user
 
