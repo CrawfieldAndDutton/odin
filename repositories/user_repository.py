@@ -90,6 +90,7 @@ class UserRepository:
         user = UserModel(
             email=user_data.email,
             username=user_data.username,
+            phone_number=user_data.phone_number,
             hashed_password=PasswordUtils.get_password_hash(user_data.password),
             first_name=user_data.first_name,
             last_name=user_data.last_name,
@@ -114,6 +115,8 @@ class UserRepository:
             user.email = user_data.email
         if user_data.username is not None:
             user.username = user_data.username
+        if user_data.phone_number is not None:
+            user.phone_number = user_data.phone_number
         if user_data.first_name is not None:
             user.first_name = user_data.first_name
         if user_data.last_name is not None:
