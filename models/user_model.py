@@ -19,6 +19,7 @@ ist = timezone('Asia/Kolkata')
 class User(Document):
     email = EmailField(required=True, unique=True)
     username = StringField(required=True, unique=True)
+    phone_number = StringField()
     hashed_password = StringField(required=True)
     first_name = StringField()
     last_name = StringField()

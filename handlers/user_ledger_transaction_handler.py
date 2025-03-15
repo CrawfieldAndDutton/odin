@@ -8,6 +8,7 @@ from dependencies.logger import logger
 from models.user_ledger_transaction_model import UserLedgerTransaction
 
 from repositories.user_ledger_transaction_repository import UserLedgerTransactionRepository
+from repositories.user_repository import UserRepository
 
 
 class UserLedgerTransactionHandler:
@@ -15,6 +16,8 @@ class UserLedgerTransactionHandler:
 
     def __init__(self):
         self.ledger_repository = UserLedgerTransactionRepository()
+
+        self.user_repository = UserRepository()
 
     def check_if_eligible(self, user_id: str, service_name: str) -> bool:
         """
@@ -76,7 +79,7 @@ class UserLedgerTransactionHandler:
             logger.exception(f"Error deducting credits for user {user_id}: {str(e)}")
             return None
 
-    def increase_credits(self, user_id: str, amount: float) -> Optional[UserLedgerTransaction]:
+    def increase_credits(self, user_id: str, amount: float, transaction_type: str) -> Optional[UserLedgerTransaction]:
         """
         Increase user credits.
 
@@ -87,12 +90,24 @@ class UserLedgerTransactionHandler:
         Returns:
             UserLedgerTransaction: The new transaction if successful, None otherwise
         """
-        return self.ledger_repository.insert_ledger_txn_for_user(
-            user_id,
-            UserLedgerTransactionType.CREDITS,
-            amount,
-            "Credits Purchased"
-        )
+        try:
+            logger.info(f"Creating ledger transaction for user {user_id} with amount {amount}")
+
+            # Ensure we have the correct type for the transaction - must be a string
+
+            # Create the transaction with a descriptive message
+            transaction = self.ledger_repository.insert_ledger_txn_for_user(
+                user_id=user_id,
+                type=transaction_type,
+                amount=float(amount),
+                description="Credits Purchased via Payment"
+            )
+
+            logger.info(f"Successfully created ledger transaction: {transaction.id}")
+            return transaction
+        except Exception as e:
+            logger.exception(f"Error increasing credits for user {user_id}: {str(e)}")
+            return None
 
     def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[UserLedgerTransaction], int]:
         """
@@ -103,7 +118,8 @@ class UserLedgerTransactionHandler:
             page: The page number to get
 
         Returns:
-            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the total number of transactions
+            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the
+            total number of transactions
         """
         if page < 1:
             # Handle invalid page number
@@ -111,6 +127,14 @@ class UserLedgerTransactionHandler:
 
         limit = 100
         offset = (page - 1) * limit
-        ledger_transactions = self.ledger_repository.get_user_ledger_transactions(user_id, limit, offset)
-        total_transactions = len(ledger_transactions)
-        return ledger_transactions[offset:offset+limit], total_transactions
+
+        # Get all transactions
+        all_transactions = self.ledger_repository.get_user_ledger_transactions(user_id)
+        total_transactions = len(all_transactions)
+
+        # Apply pagination
+        start_idx = offset
+        end_idx = min(offset + limit, total_transactions)
+        paginated_transactions = all_transactions[start_idx:end_idx] if start_idx < total_transactions else []
+
+        return paginated_transactions, total_transactions

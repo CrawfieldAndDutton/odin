@@ -4,7 +4,7 @@ from requests.models import Response
 
 # Local application imports
 from dependencies.constants import VEHICLE_HEADERS, AITAN_CONSENT_PAYLOAD, PAN_HEADERS
-from dependencies.constants import VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS
+from dependencies.constants import VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS, AADHAAR_HEADERS
 from dependencies.configuration import AppConfiguration
 
 from services.base_services import BaseService
@@ -99,3 +99,15 @@ class PassportService(BaseService):
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "file_number": file_number, "dob": dob, "name": name}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_PASSPORT, PASSPORT_HEADERS, payload)
+
+
+class AadhaarService(BaseService):
+    @staticmethod
+    def call_external_api(
+        aadhaar: str,
+    ) -> Tuple[Response, float]:
+        """
+        Call external API for aadhaar verification.
+        """
+        payload = {**AITAN_CONSENT_PAYLOAD, "aadhaar": aadhaar}
+        return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_AADHAAR, AADHAAR_HEADERS, payload)

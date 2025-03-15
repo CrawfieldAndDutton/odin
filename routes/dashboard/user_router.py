@@ -1,6 +1,6 @@
 # Standard library imports
 from typing import Any
-
+import json
 # Third-party library imports
 from fastapi import APIRouter, Depends, status, security, HTTPException
 
@@ -244,11 +244,16 @@ def get_ledger_history(
         HTTPException: If there's an error fetching ledger history.
     """
     try:
-        result, total_transactions = UserLedgerTransactionHandler().get_user_ledger_transactions(str(current_user.id), page)
+        result, total_transactions = UserLedgerTransactionHandler().get_user_ledger_transactions(
+            str(current_user.id), page
+        )
         return APISuccessResponse(
             http_status_code=status.HTTP_200_OK,
             message="Successfully retrieved ledger history",
-            result={"ledger_transactions": result, "total_transactions": total_transactions}
+            result={
+                "ledger_transactions": json.loads(json.dumps([obj.to_mongo() for obj in result])),
+                "total_transactions": total_transactions
+            }
         )
     except Exception:
         logger.exception(f"Error fetching ledger history for user {current_user.id}")
