@@ -35,6 +35,16 @@ class UserRepository:
             return None
 
     @staticmethod
+    def get_user_by_phone_number(phone_number: str) -> Optional[UserModel]:
+        """
+        Get a user by phone number.
+        """
+        try:
+            return UserModel.objects.get(phone_number=phone_number)
+        except DoesNotExist:
+            return None
+
+    @staticmethod
     def get_user_by_email(email: str) -> Optional[UserModel]:
         """
         Get a user by email.

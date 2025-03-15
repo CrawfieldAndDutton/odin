@@ -27,6 +27,8 @@ class UserLedgerTransactionRepository:
         try:
             # Get the latest transaction to calculate the new balance
             current_balance = self.user_repository.get_user_by_id(user_id).credits
+            logger.info(
+                f"Getting user {user_id} credits before inserting ledger transaction {type} {amount} {current_balance}")
 
             # Calculate new balance based on transaction type
             new_balance = current_balance + amount
@@ -42,7 +44,10 @@ class UserLedgerTransactionRepository:
             new_txn.save()
 
             # Update user credits to match the new balance
-            self.user_repository.update_user_credits(user_id, new_txn)
+            user = self.user_repository.get_user_by_id(user_id)
+            user.credits = new_balance
+            user.save()
+            logger.info(f"Updated user {user_id} credits to {new_balance} for transaction {type} {amount}")
 
             return new_txn
         except Exception as e:
