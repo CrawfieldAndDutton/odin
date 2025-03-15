@@ -63,9 +63,12 @@ async def verify_payment(
     razorpay_signature: str,
     razorpay_payment_link_reference_id: Optional[str] = None,
     razorpay_payment_link_status: Optional[str] = None
-):
+) -> RedirectResponse:
     """
     Verify a payment from Razorpay callback and redirect to a success/failure page.
+
+    Returns:
+        RedirectResponse: Redirect to success or failure page
     """
     try:
         logger.info("====================== PAYMENT VERIFICATION STARTED ======================")
@@ -125,9 +128,12 @@ async def verify_payment(
 @payment_router.post("/manual-verify")
 async def manual_verify_payment(
     payment_link_id: str
-):
+) -> Dict[str, Any]:
     """
     Manually verify a payment for testing purposes.
+
+    Returns:
+        Dict[str, Any]: Result of the manual verification
     """
     try:
         logger.info(f"Manual verification for payment link ID: {payment_link_id}")
@@ -150,9 +156,12 @@ async def manual_verify_payment(
 
 
 @payment_router.post("/webhook", response_model=Dict[str, Any])
-async def handle_webhook(request: PaymentWebhookRequest):
+async def handle_webhook(request: PaymentWebhookRequest) -> Dict[str, Any]:
     """
     Handle webhook events from Razorpay.
+
+    Returns:
+        Dict[str, Any]: Result of the webhook processing
     """
     try:
         logger.info(f"Received webhook event: {request.event}")
