@@ -250,8 +250,10 @@ def get_ledger_history(
         return APISuccessResponse(
             http_status_code=status.HTTP_200_OK,
             message="Successfully retrieved ledger history",
-            result={"ledger_transactions": json.loads(json.dumps([obj.to_mongo()
-                                                                  for obj in result])), "total_transactions": total_transactions}
+            result={
+                "ledger_transactions": json.loads(json.dumps([obj.to_mongo() for obj in result])),
+                "total_transactions": total_transactions
+            }
         )
     except Exception:
         logger.exception(f"Error fetching ledger history for user {current_user.id}")
