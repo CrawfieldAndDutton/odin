@@ -82,7 +82,7 @@ async def verify_payment(
                 razorpay_payment_link_status.lower() not in ["paid", "authorized", "captured"]):
             logger.warning(f"Payment was not successful. Status: {razorpay_payment_link_status}")
             # Redirect to a failure page
-            redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/failure-payment"
+            redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/failure-payment"
             logger.info(f"Redirecting to failure page: {redirect_url}")
             return RedirectResponse(url=redirect_url, status_code=303)
 
@@ -102,26 +102,26 @@ async def verify_payment(
         if response.success:  # Check the 'success' field
             # Redirect to a success page
             logger.info(f"VERIFICATION RESULT: {response}")
-            redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/success-payment"
+            redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/success-payment"
             logger.info(f"Redirecting to success page: {redirect_url}")
         else:
             # Redirect to a failure page
             logger.info("====================== PAYMENT VERIFICATION FAILED ======================")
             logger.info(f"VERIFICATION RESULT: {response}")
-            redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/failure-payment"
+            redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/failure-payment"
             logger.info(f"Redirecting to failure page: {redirect_url}")
 
         # Perform the redirect
         return RedirectResponse(url=redirect_url, status_code=303)
     except razorpay.errors.BadRequestError as e:
         logger.error(f"Razorpay BadRequestError: {str(e)}")
-        redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/failure-payment"
+        redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/failure-payment"
         return RedirectResponse(url=redirect_url, status_code=303)
     except Exception as e:
         logger.error(f"Error verifying payment: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-        redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/failure-payment"
+        redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/failure-payment"
         return RedirectResponse(url=redirect_url, status_code=303)
 
 
