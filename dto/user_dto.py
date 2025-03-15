@@ -9,6 +9,7 @@ from pydantic import BaseModel, EmailStr, Field
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     username: Optional[str] = None
+    phone_number: Optional[str] = None
     is_active: Optional[bool] = True
     role: Optional[str] = "user"
     first_name: Optional[str] = None
@@ -63,3 +64,15 @@ class TokenPayload(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class UserVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    mobile: str
+
+
+class UserVerifyResponse(BaseModel):
+    email: EmailStr
+    is_verified: bool
+    mobile: str

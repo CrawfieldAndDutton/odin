@@ -19,6 +19,7 @@ ist = timezone('Asia/Kolkata')
 class User(Document):
     email = EmailField(required=True, unique=True)
     username = StringField(required=True, unique=True)
+    phone_number = StringField(required=True)
     hashed_password = StringField(required=True)
     first_name = StringField()
     last_name = StringField()
@@ -57,3 +58,12 @@ class RefreshToken(Document):
         ],
         "db_alias": "kyc_fabric_db"
     }
+
+
+class VerifiedUserInformation(Document):
+    user_id = StringField(required=True)
+    phone_number = StringField(required=True, unique=True)
+    email = StringField(required=True, unique=True)
+    otp = StringField()
+    is_verified = BooleanField(default=False)
+    created_at = DateTimeField(default=datetime.now)

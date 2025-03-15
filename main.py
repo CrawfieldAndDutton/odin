@@ -28,10 +28,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Connect to MongoDB with a specific alias
 connect(
     db=AppConfiguration.MAIN_DB,
     host=AppConfiguration.MONGO_URI,
     alias="kyc_fabric_db",
+    tlsAllowInvalidCertificates=True
+)
+
+# Add a default connection as well
+connect(
+    db=AppConfiguration.MAIN_DB,
+    host=AppConfiguration.MONGO_URI,
     tlsAllowInvalidCertificates=True
 )
 
@@ -45,7 +53,6 @@ def read_root():
 app.include_router(auth_router)
 app.include_router(api_kyc_router)
 app.include_router(dashboard_kyc_router)
-
 
 if __name__ == "__main__":
     import uvicorn
