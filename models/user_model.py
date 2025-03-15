@@ -25,7 +25,7 @@ class User(Document):
     last_name = StringField()
     role = StringField(default="user", choices=["user", "admin"])
     is_active = BooleanField(default=True)
-    credits = FloatField(default=0.0)
+    credits = FloatField(default=10.0)  # Free credits for the user for promotional purposes need to be removed later
     created_at = DateTimeField(default=lambda: datetime.now(ist))
     updated_at = DateTimeField(default=lambda: datetime.now(ist))
 
