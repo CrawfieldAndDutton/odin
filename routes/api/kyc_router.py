@@ -11,7 +11,8 @@ from dependencies.logger import logger
 from dependencies.exceptions import InsufficientCreditsException
 
 from dto.kyc_dto import PanVerificationRequest, VehicleVerificationRequest
-from dto.kyc_dto import VoterVerificationRequest, DLVerificationRequest, PassportVerificationRequest
+from dto.kyc_dto import VoterVerificationRequest, DLVerificationRequest
+from dto.kyc_dto import PassportVerificationRequest, AadhaarVerificationRequest
 from dto.common_dto import APISuccessResponse
 
 from handlers.auth_handlers import AuthHandler
@@ -20,6 +21,7 @@ from handlers.rc_handler import RCHandler
 from handlers.voter_handler import VoterHandler
 from handlers.dl_handler import DLHandler
 from handlers.passport_handler import PassportHandler
+from handlers.aadhaar_handler import AadhaarHandler
 from models.user_model import User as UserModel
 
 kyc_router = APIRouter(prefix="/api/v1", tags=["KYC Verification API"])
@@ -269,6 +271,55 @@ def verify_passport(
         )
     except Exception as e:
         logger.error(f"Error in verify_passport: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"message": str(e)}
+        )
+
+
+@kyc_router.post("/aadhaar/verify", response_model=APISuccessResponse)
+def verify_aadhaar(
+    request: AadhaarVerificationRequest,
+    user: UserModel = Depends(AuthHandler.get_api_client)
+) -> Union[APISuccessResponse, JSONResponse]:
+    """
+    Verify Aadhaar details.
+
+    Args:
+        request: Aadhaar verification request
+        user: Authenticated user
+
+    Returns:
+        AadhaarVerificationResponse or JSONResponse for error cases
+    """
+    try:
+        aadhaar_verification_response, http_status_code = AadhaarHandler().get_aadhaar_kyc_details(
+            aadhaar=request.aadhaar, user_id=str(user.id)
+        )
+        logger.info(f"AADHAAR Verification Response: {aadhaar_verification_response}")
+
+        if http_status_code != status.HTTP_200_OK:
+            return JSONResponse(
+                status_code=http_status_code,
+                content={
+                    "http_status_code": http_status_code,
+                    "message": "Failure",
+                    "error": aadhaar_verification_response.get('message')
+                }
+            )
+
+        return APISuccessResponse(
+            http_status_code=http_status_code,
+            message="AADHAAR Verification Successful",
+            result=aadhaar_verification_response,
+        )
+    except InsufficientCreditsException as e:
+        return JSONResponse(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            content={"message": str(e.detail)}
+        )
+    except Exception as e:
+        logger.error(f"Error in verify_aadhaar: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"message": str(e)}

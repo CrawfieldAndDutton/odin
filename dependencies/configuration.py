@@ -24,6 +24,7 @@ class AppConfiguration:
     EXTERNAL_API_URL_VOTER = os.getenv("EXTERNAL_API_URL_VOTER")
     EXTERNAL_API_URL_DL = os.getenv("EXTERNAL_API_URL_DL")
     EXTERNAL_API_URL_PASSPORT = os.getenv("EXTERNAL_API_URL_PASSPORT")
+    EXTERNAL_API_URL_AADHAAR = os.getenv("EXTERNAL_API_URL_AADHAAR")
     MONGO_URI = os.environ["MONGO_URI"]
     MAIN_DB = os.getenv("MAIN_DB", "kyc_fabric_db")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "YOUR_SECRET_KEY_HERE")  # Change in production!
@@ -31,6 +32,10 @@ class AppConfiguration:
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT"))
+    SMTP_USER = os.getenv("SMTP_USER")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 
 
 class ServicePricing:
@@ -91,6 +96,7 @@ class KYCServiceBillableStatus:
     KYC_VOTER = ["FOUND", "NOT_FOUND"]
     KYC_DL = ["FOUND", "NOT_FOUND"]
     KYC_PASSPORT = ["FOUND", "NOT_FOUND"]
+    KYC_AADHAAR = ["FOUND", "NOT_FOUND"]
 
 
 class KYCProvider(BaseEnum):

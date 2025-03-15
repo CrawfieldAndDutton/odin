@@ -12,6 +12,9 @@ from dto.user_dto import (
     UserCreate,
     UserUpdate,
     RefreshTokenRequest,
+    UserOTPCreate,
+    UserVerifyResponse,
+    UserVerifyRequest
 )
 from dto.common_dto import APISuccessResponse
 
@@ -244,7 +247,9 @@ def get_ledger_history(
         HTTPException: If there's an error fetching ledger history.
     """
     try:
-        result, total_transactions = UserLedgerTransactionHandler().get_user_ledger_transactions(str(current_user.id), page)
+        result, total_transactions = UserLedgerTransactionHandler().get_user_ledger_transactions(
+            str(current_user.id), page
+        )
         return APISuccessResponse(
             http_status_code=status.HTTP_200_OK,
             message="Successfully retrieved ledger history",
@@ -257,3 +262,49 @@ def get_ledger_history(
             detail="Failed to fetch ledger history",
             headers={"WWW-Authenticate": "Bearer"}
         )
+
+
+@auth_router.post("/send_otp/", response_model=UserVerifyResponse)
+def send_otp(user: UserOTPCreate):
+    try:
+        # Log the request data for debugging
+        logger.info(
+            f"Received request with email: {user.email}, phone_number: {user.phone_number}"
+        )
+
+        AuthHandler.send_otp(user.email, user.phone_number)
+        return {
+            "email": user.email,
+            "is_verified": False,
+            "phone_number": user.phone_number
+        }
+    except Exception as e:
+        # Log the error for debugging
+        logger.error(f"Error sending OTP: {str(e)}")
+        # Handle any exceptions that may occur
+        raise HTTPException(
+            status_code=500, detail=f"Failed to send OTP: {str(e)}"
+            )
+
+
+@auth_router.post("/verify_otp/", response_model=UserVerifyResponse)
+def verify_otp(user: UserVerifyRequest):
+    try:
+        is_verified = AuthHandler.verify_otp(user.email, user.otp)
+        if not is_verified:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+
+        # Get the user to include phone_number in response
+        from repositories.user_repository import UserRepository
+        user_data = UserRepository.find_user_by_email(user.email)
+
+        return {
+            "email": user.email,
+            "is_verified": True,
+            "phone_number": user_data.phone_number
+        }
+    except Exception as e:
+        # Handle any exceptions that may occur
+        raise HTTPException(
+            status_code=500, detail=f"Failed to verify OTP: {str(e)}"
+            )

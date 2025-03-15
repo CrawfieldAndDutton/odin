@@ -103,7 +103,8 @@ class UserLedgerTransactionHandler:
             page: The page number to get
 
         Returns:
-            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the total number of transactions
+            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the
+            total number of transactions
         """
         if page < 1:
             # Handle invalid page number

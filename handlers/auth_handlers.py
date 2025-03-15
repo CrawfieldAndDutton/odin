@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import secrets
 import base64
 from typing import Any, Optional, Union, Tuple, Dict
+import random
 
 # Third-party library imports
 from fastapi import Depends, HTTPException, status, security, Header
@@ -23,6 +24,8 @@ from repositories.api_client_repository import APIClientRepository
 
 from models.user_model import User as UserModel, RefreshToken
 from models.api_client_model import APIClient as APIClientModel
+
+from services.user_service import EmailService
 
 ist = timezone('Asia/Kolkata')
 
@@ -365,6 +368,7 @@ class AuthHandler:
             _id=str(user.id),
             email=user.email,
             username=user.username,
+            phone_number=user.phone_number,
             is_active=user.is_active,
             role=user.role,
             first_name=user.first_name,
@@ -388,6 +392,7 @@ class AuthHandler:
             _id=str(current_user.id),
             email=current_user.email,
             username=current_user.username,
+            phone_number=current_user.phone_number,
             is_active=current_user.is_active,
             role=current_user.role,
             first_name=current_user.first_name,
@@ -414,6 +419,7 @@ class AuthHandler:
             _id=str(updated_user.id),
             email=updated_user.email,
             username=updated_user.username,
+            phone_number=updated_user.phone_number,
             is_active=updated_user.is_active,
             role=updated_user.role,
             first_name=updated_user.first_name,
@@ -483,3 +489,18 @@ class AuthHandler:
             HTTPException: If the authorization header is invalid.
         """
         return AuthHandler.get_current_client(authorization)
+
+    @staticmethod
+    def generate_otp():
+        return str(random.randint(100000, 999999))
+
+    @staticmethod
+    def send_otp(email: str, phone_number: str):
+        otp = AuthHandler.generate_otp()
+        UserRepository.create_user_otp(email, phone_number, otp)
+        EmailService.send_otp_email(email, otp)
+
+    @staticmethod
+    def verify_otp(email: str, otp: str):
+        user = UserRepository.verify_user(email, otp)
+        return user is not None
