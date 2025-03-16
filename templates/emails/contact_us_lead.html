@@ -1,0 +1,16 @@
+{% extends "base_template.html" %}
+
+{% block content %}
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding: 30px;">
+        <h3 style="margin: 0 0 20px; color: #1C2541; font-size: 20px;">Dear KYCFabric Team,</h3>
+        <p style="margin: 0 0 20px; color: #333333; font-size: 16px;">We're excited to present a new lead for KYCFabric.</p>
+
+        <p style="margin: 0 0 20px; color: #333333; font-size: 16px;">Name: {{ name }}</p>
+        <p style="margin: 0 0 20px; color: #333333; font-size: 16px;">Email: {{ lead_email }}</p>
+        <p style="margin: 0 0 20px; color: #333333; font-size: 16px;">Company: {{ company }}</p>
+        <p style="margin: 0 0 20px; color: #333333; font-size: 16px;">Phone: {{ phone }}</p>
+        <p style="margin: 0 0 20px; color: #333333; font-size: 16px;">Message: {{ message }}</p>
+
+{% endblock %}
