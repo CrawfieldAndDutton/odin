@@ -24,7 +24,7 @@ from repositories.api_client_repository import APIClientRepository
 from models.user_model import User as UserModel, RefreshToken
 from models.api_client_model import APIClient as APIClientModel
 
-from services.user_service import EmailService
+from services.email_service import EmailService
 
 ist = timezone('Asia/Kolkata')
 
