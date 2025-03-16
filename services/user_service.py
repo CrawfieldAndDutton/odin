@@ -10,7 +10,7 @@ class EmailService:
     def send_otp_email(email: str, otp: str):
 
         company_name = "Crawfield and Dutton"
-        subject = f"Your {company_name} OTP for Email Verification"
+        subject = f"Your OTP for Email Verification from {company_name}"
 
         # Load Jinja2 template
         env = Environment(loader=FileSystemLoader("templates"))
@@ -20,7 +20,6 @@ class EmailService:
             user_name=email.split('@')[0],
             company_name=company_name,
             otp_code=otp,
-            otp_expiry=10,  # OTP validity in days
             company_website="https://crawfieldanddutton.com"
         )
 
