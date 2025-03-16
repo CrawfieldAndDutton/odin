@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 # Local application imports
 from dependencies.configuration import ServicePricing, UserLedgerTransactionType
@@ -97,7 +97,7 @@ class UserLedgerTransactionHandler:
             "Credits Purchased"
         )
 
-    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[UserLedgerTransaction], int]:
+    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[Dict], int]:
         """
         Get all ledger transactions for a user in a paginated manner.
 
@@ -106,7 +106,7 @@ class UserLedgerTransactionHandler:
             page: The page number to get
 
         Returns:
-            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the
+            tuple[List[Dict], int]: The list of ledger transactions as dictionaries and the
             total number of transactions
         """
         if page < 1:
@@ -125,4 +125,7 @@ class UserLedgerTransactionHandler:
         end_idx = min(offset + limit, total_transactions)
         paginated_transactions = all_transactions[start_idx:end_idx] if start_idx < total_transactions else []
 
-        return paginated_transactions, total_transactions
+        # Convert transactions to dictionaries
+        transaction_dicts = [txn.to_mongo() for txn in paginated_transactions]
+
+        return transaction_dicts, total_transactions

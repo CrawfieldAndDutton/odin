@@ -245,13 +245,14 @@ def get_ledger_history(
     """
     try:
         result, total_transactions = UserLedgerTransactionHandler().get_user_ledger_transactions(
-            str(current_user.id), page
+            str(current_user.id),
+            page
         )
         return APISuccessResponse(
             http_status_code=status.HTTP_200_OK,
             message="Successfully retrieved ledger history",
             result={
-                "ledger_transactions": json.loads(json.dumps([obj.to_mongo() for obj in result])),
+                "ledger_transactions": result,
                 "total_transactions": total_transactions
             }
         )
