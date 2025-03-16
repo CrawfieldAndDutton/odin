@@ -3,20 +3,52 @@ from typing import Optional
 
 # Third-party library imports
 from mongoengine.errors import DoesNotExist
-from pytz import timezone
 
 # Local application imports
 from dependencies.logger import logger
 
 from models.payment_model import PaymentTransaction
-
-
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
+from dto.payment_dto import PaymentLinkRequest
 
 
 class PaymentRepository:
     """Repository for payment-related database operations."""
+
+    @staticmethod
+    def create_payment_transaction(
+        user_id: str,
+        request: PaymentLinkRequest,
+        response: dict,
+        reference_id: str
+    ) -> None:
+        """
+        Create a new payment transaction.
+
+        Args:
+            user_id: ID of the user creating the transaction
+            request: Payment link request containing amount and credits
+            response: Response from the payment service
+            reference_id: Unique reference ID for the transaction
+        """
+        try:
+            # Create payment transaction
+            payment_transaction = PaymentTransaction(
+                user_id=str(user_id),
+                total_amount=request.amount,
+                currency="INR",
+                credits_purchased=request.credits_purchased,
+                order_id=reference_id,
+                order_status="pending",
+                payment_status="pending",
+                short_url=response.get("short_url"),
+                razorpay_payment_link_id=response.get("id"),
+                razorpay_response=response
+            )
+            payment_transaction.save()
+            logger.info(f"Created payment transaction with order ID: {reference_id}")
+        except Exception as e:
+            logger.error(f"Error creating payment transaction: {str(e)}")
+            raise e
 
     @staticmethod
     def get_transaction_by_order_id(order_id: str) -> Optional[PaymentTransaction]:

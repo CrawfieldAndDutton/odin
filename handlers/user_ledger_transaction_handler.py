@@ -79,7 +79,7 @@ class UserLedgerTransactionHandler:
             logger.exception(f"Error deducting credits for user {user_id}: {str(e)}")
             return None
 
-    def increase_credits(self, user_id: str, amount: float, transaction_type: str) -> Optional[UserLedgerTransaction]:
+    def increase_credits(self, user_id: str, amount: float) -> Optional[UserLedgerTransaction]:
         """
         Increase user credits.
 
@@ -90,24 +90,12 @@ class UserLedgerTransactionHandler:
         Returns:
             UserLedgerTransaction: The new transaction if successful, None otherwise
         """
-        try:
-            logger.info(f"Creating ledger transaction for user {user_id} with amount {amount}")
-
-            # Ensure we have the correct type for the transaction - must be a string
-
-            # Create the transaction with a descriptive message
-            transaction = self.ledger_repository.insert_ledger_txn_for_user(
-                user_id=user_id,
-                type=transaction_type,
-                amount=float(amount),
-                description="Credits Purchased via Payment"
-            )
-
-            logger.info(f"Successfully created ledger transaction: {transaction.id}")
-            return transaction
-        except Exception as e:
-            logger.exception(f"Error increasing credits for user {user_id}: {str(e)}")
-            return None
+        return self.ledger_repository.insert_ledger_txn_for_user(
+            user_id,
+            UserLedgerTransactionType.CREDIT.value,
+            amount,
+            "Credits Purchased"
+        )
 
     def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[UserLedgerTransaction], int]:
         """

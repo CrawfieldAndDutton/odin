@@ -44,10 +44,7 @@ class UserLedgerTransactionRepository:
             new_txn.save()
 
             # Update user credits to match the new balance
-            user = self.user_repository.get_user_by_id(user_id)
-            user.credits = new_balance
-            user.save()
-            logger.info(f"Updated user {user_id} credits to {new_balance} for transaction {type} {amount}")
+            self.user_repository.update_user_credits(user_id, new_txn)
 
             return new_txn
         except Exception as e:

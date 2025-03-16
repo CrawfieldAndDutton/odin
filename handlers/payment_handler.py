@@ -5,11 +5,10 @@ from datetime import datetime
 
 # Third-party library imports
 from fastapi import HTTPException
-from pytz import timezone
 
 # Local application imports
 from dependencies.logger import logger
-from dependencies.configuration import UserLedgerTransactionType
+from dependencies.constants import IST
 
 from dto.payment_dto import (
     PaymentLinkRequest,
@@ -25,19 +24,14 @@ from services.base_services import BaseService
 
 from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
 
-
 from repositories.payment_repository import PaymentRepository
-
-
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
 
 
 class PaymentHandler:
     """Handler for payment-related operations."""
 
     @staticmethod
-    async def create_payment_link(
+    def create_payment_link(
         request: PaymentLinkRequest,
         current_user: UserModel
     ) -> tuple:
@@ -60,30 +54,24 @@ class PaymentHandler:
         if request.credits_purchased <= 0:
             raise HTTPException(status_code=400, detail="Credits must be greater than zero")
 
+        # Generate a unique reference ID
+        reference_id = f"order_{uuid.uuid4().hex[:10]}"
+
         # Create payment link
-        response = await PaymentService.create_payment_link(
+        response = PaymentService.create_payment_link(
             user=current_user,
             amount=request.amount,
             credits_purchased=request.credits_purchased
         )
 
-        # Generate a unique reference ID
-        reference_id = f"order_{uuid.uuid4().hex[:10]}"
-
-        # Create payment transaction
-        payment_transaction = PaymentTransaction(
+        # Create payment transaction using repository
+        payment_repository = PaymentRepository()
+        payment_repository.create_payment_transaction(
             user_id=str(current_user.id),
-            total_amount=request.amount,
-            currency="INR",
-            credits_purchased=request.credits_purchased,
-            order_id=reference_id,
-            order_status="pending",
-            payment_status="pending",
-            short_url=response.get("short_url"),
-            razorpay_payment_link_id=response.get("id"),
-            razorpay_response=response
+            request=request,
+            response=response,
+            reference_id=reference_id
         )
-        payment_transaction.save()
 
         return reference_id, response
 
@@ -330,9 +318,7 @@ class PaymentHandler:
             ledger_handler = UserLedgerTransactionHandler()
             ledger_txn = ledger_handler.increase_credits(
                 str(user.id),
-                float(transaction.credits_purchased),
-                UserLedgerTransactionType.CREDIT.value
-            )
+                float(transaction.credits_purchased))
 
             if not ledger_txn:
                 error_msg = "Failed to create ledger transaction"
@@ -389,7 +375,7 @@ class PaymentHandler:
         return params_dict
 
     @staticmethod
-    async def verify_payment(
+    def verify_payment(
         razorpay_payment_id: str,
         razorpay_payment_link_id: str,
         razorpay_signature: str,
@@ -409,7 +395,6 @@ class PaymentHandler:
         Returns:
             PaymentVerificationResponse: Verification response object
         """
-        logger.info("====================== PAYMENT HANDLER STARTED ======================")
         logger.info(f"Handler verifying payment with ID {razorpay_payment_id}")
         logger.info(f"Payment link ID: {razorpay_payment_link_id}")
         logger.info(f"Payment signature: {razorpay_signature}")
@@ -482,7 +467,7 @@ class PaymentHandler:
             )
 
         # Process payment details and update transaction
-        result = await PaymentHandler._process_payment_details(
+        result = PaymentHandler._process_payment_details(
             client,
             transaction,
             razorpay_payment_id,
@@ -511,12 +496,11 @@ class PaymentHandler:
             )
 
         logger.info(f"Verification result: {response}")
-        logger.info("====================== PAYMENT HANDLER COMPLETED ======================")
 
         return response
 
     @staticmethod
-    async def _process_payment_details(
+    def _process_payment_details(
         client: Any,
         transaction: PaymentTransaction,
         razorpay_payment_id: str,
@@ -615,7 +599,7 @@ class PaymentHandler:
         }
 
     @staticmethod
-    async def handle_webhook(
+    def handle_webhook(
         request: PaymentWebhookRequest
     ) -> Dict[str, Any]:
         """
@@ -658,31 +642,6 @@ class PaymentHandler:
         if event in ["payment.captured", "payment_link.paid", "order.paid"]:
             # These events indicate successful payment
             PaymentHandler._update_transaction_for_payment_captured(transaction, payment_entity)
-
-            # Add credits to user if not already added
-            user = UserModel.objects(id=transaction.user_id).first()
-            if user:
-                logger.info(f"User {user.id} current credits: {user.credits}")
-
-                # Create an instance of UserLedgerTransactionHandler and call increase_credits
-                ledger_handler = UserLedgerTransactionHandler()
-                ledger_txn = ledger_handler.increase_credits(
-                    str(user.id),
-                    float(transaction.credits_purchased),
-                    UserLedgerTransactionType.CREDIT.value
-                )
-
-                if ledger_txn:
-                    # Refresh user object to get updated credits
-                    user.reload()
-                    logger.info(
-                        f"Added {transaction.credits_purchased} credits to user {user.id}, "
-                        f"new total: {user.credits}"
-                    )
-                else:
-                    logger.error(f"Failed to create ledger transaction for user {user.id}")
-            else:
-                logger.error(f"User not found for ID: {transaction.user_id}")
 
         elif event == "payment.authorized":
             PaymentHandler._update_transaction_for_payment_authorized(transaction, payment_entity)
@@ -804,7 +763,7 @@ class PaymentHandler:
             transaction.webhook_responses = {}
 
         # Add this webhook event to the responses
-        webhook_key = f"{event}_{int(datetime.now(ist).timestamp())}"
+        webhook_key = f"{event}_{int(datetime.now(IST).timestamp())}"
         transaction.webhook_responses[webhook_key] = event_data
 
         # Save the transaction
@@ -936,7 +895,7 @@ class PaymentHandler:
         )
 
     @staticmethod
-    async def manual_verify_payment(payment_link_id: str) -> Dict[str, Any]:
+    def manual_verify_payment(payment_link_id: str) -> Dict[str, Any]:
         """
         Manually verify a payment for testing purposes.
 
@@ -986,9 +945,7 @@ class PaymentHandler:
         ledger_handler = UserLedgerTransactionHandler()
         ledger_txn = ledger_handler.increase_credits(
             str(user.id),
-            float(transaction.credits_purchased),
-            UserLedgerTransactionType.CREDIT.value
-        )
+            float(transaction.credits_purchased))
 
         if not ledger_txn:
             error_msg = "Failed to create ledger transaction"

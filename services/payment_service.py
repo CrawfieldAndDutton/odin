@@ -1,17 +1,13 @@
 # Standard library imports
 from typing import Dict, Any
 
-# Third-party library imports
-from pytz import timezone
-
 # Local application imports
 from services.base_services import BaseService
-from dependencies.constants import RAZORPAY_PAYMENT_LINK_PAYLOAD
-from dependencies.razorpay_templates import RAZORPAY_DYNAMIC_VALUES_TEMPLATE
-from models.user_model import User
 
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
+from dependencies.constants import RAZORPAY_PAYMENT_LINK_PAYLOAD, get_expiry_timestamp
+from dependencies.razorpay_templates import RAZORPAY_DYNAMIC_VALUES_TEMPLATE
+
+from models.user_model import User
 
 
 class PaymentService:
@@ -20,7 +16,7 @@ class PaymentService:
     """
 
     @staticmethod
-    async def create_payment_link(
+    def create_payment_link(
         user: User,
         amount: float,
         credits_purchased: int
@@ -39,8 +35,6 @@ class PaymentService:
 
         client = BaseService.get_razorpay_client()
 
-        # Generate a unique reference ID
-
         # Create dynamic values using the template
         dynamic_values = RAZORPAY_DYNAMIC_VALUES_TEMPLATE.copy()
 
@@ -53,8 +47,12 @@ class PaymentService:
         dynamic_values["notes"]["user_id"] = str(user.id)
         dynamic_values["notes"]["credits_purchased"] = str(credits_purchased)
 
-        # Merge the constant payload with dynamic values
-        payment_link_data = {**RAZORPAY_PAYMENT_LINK_PAYLOAD, **dynamic_values}
+        # Merge the constant payload with dynamic values and add expiry timestamp
+        payment_link_data = {
+            **RAZORPAY_PAYMENT_LINK_PAYLOAD,
+            **dynamic_values,
+            "expire_by": get_expiry_timestamp()  # Calculate expiry at creation time
+        }
 
         # Create payment link
         return client.payment_link.create(payment_link_data)

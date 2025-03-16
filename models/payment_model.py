@@ -9,10 +9,9 @@ from mongoengine import (
     DateTimeField,
     DictField,
 )
-from pytz import timezone
 
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
+# Local application imports
+from dependencies.constants import IST
 
 
 class PaymentTransaction(Document):
@@ -38,8 +37,8 @@ class PaymentTransaction(Document):
     payment_response_from_razorpay = DictField()  # Response from Razorpay after payment
     webhook_responses = DictField()  # Responses from Razorpay webhooks
     signature = StringField()  # Payment verification signature
-    created_at = DateTimeField(default=datetime.now(ist))
-    updated_at = DateTimeField(default=datetime.now(ist))
+    created_at = DateTimeField(default=datetime.now(IST))
+    updated_at = DateTimeField(default=datetime.now(IST))
 
     meta = {
         'collection': 'payment_transactions',
@@ -57,5 +56,5 @@ class PaymentTransaction(Document):
     }
 
     def save(self, *args, **kwargs):
-        self.updated_at = datetime.now(ist)
+        self.updated_at = datetime.now(IST)
         return super(PaymentTransaction, self).save(*args, **kwargs)

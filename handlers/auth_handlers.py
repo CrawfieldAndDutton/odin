@@ -8,14 +8,13 @@ from typing import Any, Optional, Union, Tuple, Dict
 from fastapi import Depends, HTTPException, status, security, Header
 from jose import jwt, JWTError
 from mongoengine.errors import DoesNotExist
-from pytz import timezone
 
 # Local application imports
 from dependencies.logger import logger
 from dependencies.configuration import AppConfiguration as settings
 from dependencies.password_utils import PasswordUtils
 from dependencies.exceptions import CredentialsException, UserNotFoundException, UserAlreadyExistsException
-
+from dependencies.constants import IST
 from dto.user_dto import TokenPayload, UserCreate, UserUpdate, Token, TokenRefresh, User, RefreshTokenRequest
 
 from repositories.user_repository import UserRepository
@@ -23,8 +22,6 @@ from repositories.api_client_repository import APIClientRepository
 
 from models.user_model import User as UserModel, RefreshToken
 from models.api_client_model import APIClient as APIClientModel
-
-ist = timezone('Asia/Kolkata')
 
 
 class AuthHandler:
@@ -116,7 +113,7 @@ class AuthHandler:
         Returns:
             str: The encoded JWT access token.
         """
-        expire = datetime.now(ist) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = datetime.now(IST) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
         to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
         encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         return encoded_jwt
@@ -133,7 +130,7 @@ class AuthHandler:
             Tuple[str, datetime]: The encoded JWT refresh token and its expiration time.
         """
         token_value = secrets.token_hex(32)
-        expires_at = datetime.now(ist) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = datetime.now(IST) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
         refresh_token = RefreshToken(user_id=user_id, token=token_value, expires_at=expires_at)
         refresh_token.save()
@@ -194,7 +191,7 @@ class AuthHandler:
             stored_token = RefreshToken.objects(
                 token=jti,
                 user_id=user_id,
-                expires_at__gt=datetime.now(ist)
+                expires_at__gt=datetime.now(IST)
             ).first()
 
             if not stored_token:
@@ -240,7 +237,7 @@ class AuthHandler:
         Returns:
             bool: True if tokens were deleted, False otherwise.
         """
-        result = RefreshToken.objects(user_id=user_id, expires_at__gt=datetime.now(ist)).delete()
+        result = RefreshToken.objects(user_id=user_id, expires_at__gt=datetime.now(IST)).delete()
         return result > 0
 
     @staticmethod
@@ -277,7 +274,7 @@ class AuthHandler:
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "bearer",
-            "expires_at": datetime.now(ist) + access_token_expires
+            "expires_at": datetime.now(IST) + access_token_expires
         }
 
     @staticmethod
@@ -309,7 +306,7 @@ class AuthHandler:
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "expires_at": datetime.now(ist) + access_token_expires
+            "expires_at": datetime.now(IST) + access_token_expires
         }
 
     @staticmethod

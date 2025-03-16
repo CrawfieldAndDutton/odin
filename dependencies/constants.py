@@ -1,5 +1,9 @@
+from pytz import timezone
 from dependencies.configuration import AppConfiguration
+from datetime import datetime, timedelta
 
+# Define IST timezone
+IST = timezone('Asia/Kolkata')
 
 PAN_HEADERS = {
     "Content-Type": "application/json",
@@ -42,25 +46,31 @@ AITAN_CONSENT_PAYLOAD = {
 }
 
 
+# Calculate expiry time (30 minutes from now)
+def get_expiry_timestamp():
+    return int((datetime.now(IST) + timedelta(minutes=30)).timestamp())
+
+
 # Razorpay payment link payload
 RAZORPAY_PAYMENT_LINK_PAYLOAD = {
     "currency": "INR",
     "accept_partial": False,
-    "description": "",  # Will be dynamically set
+    "description": "",
     "customer": {
-        "name": "",  # Will be dynamically set
-        "email": "",  # Will be dynamically set
-        "contact": ""  # Optional, can be added if available
+        "name": "",
+        "email": "",
+        "contact": ""
     },
     "notify": {
-        "sms": False,
+        "sms": True,
         "email": True
     },
     "reminder_enable": True,
     "notes": {
-        "user_id": "",  # Will be dynamically set
-        "credits_purchased": ""  # Will be dynamically set
+        "user_id": "",
+        "credits_purchased": ""
     },
     "callback_url": f"{AppConfiguration.BACKEND_BASE_URL}/dashboard/api/v1/payments/verify",
-    "callback_method": "get"
+    "callback_method": "get",
+    "expire_by": get_expiry_timestamp()
 }
