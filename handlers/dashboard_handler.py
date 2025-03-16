@@ -8,6 +8,7 @@ from repositories.user_repository import UserRepository
 from dependencies.logger import logger
 from services.email_service import EmailService
 
+
 class DashboardHandler:
 
     def __init__(self):
