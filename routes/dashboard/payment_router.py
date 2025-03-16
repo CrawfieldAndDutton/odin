@@ -2,18 +2,21 @@
 from typing import Dict, Any, Optional
 
 # Third-party library imports
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse
 import razorpay
+from fastapi import APIRouter, Depends, HTTPException, responses
+
 # Local application imports
 from handlers.payment_handler import PaymentHandler
 from handlers.auth_handlers import AuthHandler
+
 from models.user_model import User as UserModel
+
 from dto.payment_dto import (
     PaymentLinkRequest,
     PaymentLinkResponse,
     PaymentWebhookRequest,
 )
+
 from dependencies.logger import logger
 from dependencies.configuration import AppConfiguration
 
@@ -63,7 +66,7 @@ async def verify_payment(
     razorpay_signature: str,
     razorpay_payment_link_reference_id: Optional[str] = None,
     razorpay_payment_link_status: Optional[str] = None
-) -> RedirectResponse:
+) -> responses.RedirectResponse:
     """
     Verify a payment from Razorpay callback and redirect to a success/failure page.
 
@@ -84,7 +87,7 @@ async def verify_payment(
             # Redirect to a failure page
             redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/failure-payment"
             logger.info(f"Redirecting to failure page: {redirect_url}")
-            return RedirectResponse(url=redirect_url, status_code=303)
+            return responses.RedirectResponse(url=redirect_url, status_code=303)
 
         # Get the verification response directly from the handler
         response = await PaymentHandler.verify_payment(
@@ -112,17 +115,17 @@ async def verify_payment(
             logger.info(f"Redirecting to failure page: {redirect_url}")
 
         # Perform the redirect
-        return RedirectResponse(url=redirect_url, status_code=303)
+        return responses.RedirectResponse(url=redirect_url, status_code=303)
     except razorpay.errors.BadRequestError as e:
         logger.error(f"Razorpay BadRequestError: {str(e)}")
         redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/failure-payment"
-        return RedirectResponse(url=redirect_url, status_code=303)
+        return responses.RedirectResponse(url=redirect_url, status_code=303)
     except Exception as e:
         logger.error(f"Error verifying payment: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
         redirect_url = f"{AppConfiguration.FRONTEND_BASE_URL}/#/failure-payment"
-        return RedirectResponse(url=redirect_url, status_code=303)
+        return responses.RedirectResponse(url=redirect_url, status_code=303)
 
 
 @payment_router.post("/manual-verify")

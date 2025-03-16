@@ -7,6 +7,7 @@ from mongoengine import DoesNotExist
 # Local application imports
 from dependencies.logger import logger
 from dependencies.configuration import UserLedgerTransactionType
+
 from models.kyc_model import KYCValidationTransaction
 
 
