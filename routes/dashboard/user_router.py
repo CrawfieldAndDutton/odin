@@ -268,7 +268,7 @@ def get_ledger_history(
         )
 
 
-@auth_router.post("/auth/send_otp", response_model=UserVerifyResponse, tags=["Auth"])
+@auth_router.post("/auth/send_otp/", response_model=UserVerifyResponse, tags=["Auth"])
 def send_otp(user: UserOTPCreate):
     try:
         # Log the request data for debugging
@@ -291,7 +291,7 @@ def send_otp(user: UserOTPCreate):
         )
 
 
-@auth_router.post("/auth/verify_otp", response_model=UserVerifyResponse, tags=["Auth"])
+@auth_router.post("/auth/verify_otp/", response_model=UserVerifyResponse, tags=["Auth"])
 def verify_otp(user: UserVerifyRequest):
     try:
         is_email_verified = AuthHandler.verify_otp(user.email, user.otp)
