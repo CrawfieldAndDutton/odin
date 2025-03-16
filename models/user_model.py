@@ -10,10 +10,9 @@ from mongoengine import (
     DateTimeField,
     FloatField,
 )
-from pytz import timezone
 
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
+# Local application imports
+from dependencies.constants import IST
 
 
 class User(Document):
@@ -25,9 +24,9 @@ class User(Document):
     last_name = StringField()
     role = StringField(default="user", choices=["user", "admin"])
     is_active = BooleanField(default=True)
-    credits = FloatField(default=0.0)
-    created_at = DateTimeField(default=lambda: datetime.now(ist))
-    updated_at = DateTimeField(default=lambda: datetime.now(ist))
+    credits = FloatField(default=10.0)  # Free credits for the user for promotional purposes need to be removed later
+    created_at = DateTimeField(default=lambda: datetime.now(IST))
+    updated_at = DateTimeField(default=lambda: datetime.now(IST))
 
     meta = {
         'collection': 'users',
@@ -39,7 +38,7 @@ class User(Document):
     }
 
     def save(self, *args, **kwargs):
-        self.updated_at = datetime.now(ist)
+        self.updated_at = datetime.now(IST)
         return super(User, self).save(*args, **kwargs)
 
 
@@ -47,7 +46,7 @@ class RefreshToken(Document):
     user_id = StringField(required=True)
     token = StringField(required=True, unique=True)
     expires_at = DateTimeField(required=True)
-    created_at = DateTimeField(default=lambda: datetime.now(ist))
+    created_at = DateTimeField(default=lambda: datetime.now(IST))
 
     meta = {
         'collection': 'refresh_tokens',

@@ -14,6 +14,7 @@ from dependencies.middleware_log import log_middleware
 from routes.dashboard.user_router import auth_router
 from routes.api.kyc_router import kyc_router as api_kyc_router
 from routes.dashboard.kyc_router import kyc_router as dashboard_kyc_router
+from routes.dashboard.payment_router import payment_router as payment_router
 
 
 # Initialize FastAPI app
@@ -28,7 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Connect to MongoDB with a specific alias
 connect(
     db=AppConfiguration.MAIN_DB,
     host=AppConfiguration.MONGO_URI,
@@ -46,6 +46,7 @@ def read_root():
 app.include_router(auth_router)
 app.include_router(api_kyc_router)
 app.include_router(dashboard_kyc_router)
+app.include_router(payment_router)
 
 if __name__ == "__main__":
     import uvicorn

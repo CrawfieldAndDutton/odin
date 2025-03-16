@@ -77,7 +77,7 @@ def verify_pan(
 
 
 @kyc_router.post("/rc/verify", response_model=APISuccessResponse)
-async def verify_vehicle(
+def verify_vehicle(
     request: VehicleVerificationRequest,
     user: UserModel = Depends(AuthHandler.get_api_client)
 ) -> Union[APISuccessResponse, JSONResponse]:
@@ -123,7 +123,6 @@ async def verify_vehicle(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"message": str(e)}
         )
-    # return await RCHandler.verify_vehicle(request, str(user.id))
 
 
 @kyc_router.post("/voter/verify", response_model=APISuccessResponse)
