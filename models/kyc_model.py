@@ -11,10 +11,9 @@ from mongoengine import (
     DictField,
     DateTimeField,
 )
-from pytz import timezone
 
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
+# Local application imports
+from dependencies.constants import IST
 
 
 class KYCValidationTransaction(Document):
@@ -31,8 +30,8 @@ class KYCValidationTransaction(Document):
     kyc_provider_request = DictField()  # Request payload sent to the provider
     kyc_provider_response = DictField()  # Raw response received from the provider
     user_id = StringField(required=True)
-    created_at = DateTimeField(default=lambda: datetime.now(ist))
-    updated_at = DateTimeField(default=lambda: datetime.now(ist))
+    created_at = DateTimeField(default=lambda: datetime.now(IST))
+    updated_at = DateTimeField(default=lambda: datetime.now(IST))
 
     # Meta Configuration
     meta = {
@@ -49,5 +48,5 @@ class KYCValidationTransaction(Document):
 
     def save(self, *args, **kwargs):
         """Override save to update `updated_at` timestamp."""
-        self.updated_at = datetime.now(ist)
+        self.updated_at = datetime.now(IST)
         return super().save(*args, **kwargs)

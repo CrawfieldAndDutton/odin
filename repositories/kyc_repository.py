@@ -7,6 +7,7 @@ from mongoengine import DoesNotExist
 # Local application imports
 from dependencies.logger import logger
 from dependencies.configuration import UserLedgerTransactionType
+
 from models.kyc_model import KYCValidationTransaction
 
 
@@ -44,6 +45,12 @@ class KYCRepository:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__file_number=identifier,
+                    status__in=kyc_service_billable_status,
+                ).first()
+            elif api_name == UserLedgerTransactionType.KYC_AADHAAR.value:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    kyc_transaction_details__aadhaar=identifier,
                     status__in=kyc_service_billable_status,
                 ).first()
         except DoesNotExist:

@@ -27,6 +27,8 @@ class UserLedgerTransactionRepository:
         try:
             # Get the latest transaction to calculate the new balance
             current_balance = self.user_repository.get_user_by_id(user_id).credits
+            logger.info(
+                f"Getting user {user_id} credits before inserting ledger transaction {type} {amount} {current_balance}")
 
             # Calculate new balance based on transaction type
             new_balance = current_balance + amount
