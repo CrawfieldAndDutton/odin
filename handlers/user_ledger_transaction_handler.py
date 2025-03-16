@@ -128,8 +128,8 @@ class UserLedgerTransactionHandler:
         # Convert transactions to dictionaries
         transaction_dicts = []
         for txn in paginated_transactions:
-            event_dict = txn.to_mongo()
             event_dict.pop('_id', None)  # Remove MongoDB _id field
+            event_dict = txn.to_mongo()
             transaction_dicts.append(event_dict)
 
         return transaction_dicts, total_transactions
