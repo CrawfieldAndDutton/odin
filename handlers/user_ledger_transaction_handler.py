@@ -8,6 +8,7 @@ from dependencies.logger import logger
 from models.user_ledger_transaction_model import UserLedgerTransaction
 
 from repositories.user_ledger_transaction_repository import UserLedgerTransactionRepository
+from repositories.user_repository import UserRepository
 
 
 class UserLedgerTransactionHandler:
@@ -15,6 +16,8 @@ class UserLedgerTransactionHandler:
 
     def __init__(self):
         self.ledger_repository = UserLedgerTransactionRepository()
+
+        self.user_repository = UserRepository()
 
     def check_if_eligible(self, user_id: str, service_name: str) -> bool:
         """
@@ -89,7 +92,7 @@ class UserLedgerTransactionHandler:
         """
         return self.ledger_repository.insert_ledger_txn_for_user(
             user_id,
-            UserLedgerTransactionType.CREDITS,
+            UserLedgerTransactionType.CREDIT.value,
             amount,
             "Credits Purchased"
         )
@@ -112,6 +115,14 @@ class UserLedgerTransactionHandler:
 
         limit = 100
         offset = (page - 1) * limit
-        ledger_transactions = self.ledger_repository.get_user_ledger_transactions(user_id, limit, offset)
-        total_transactions = len(ledger_transactions)
-        return ledger_transactions[offset:offset+limit], total_transactions
+
+        # Get all transactions
+        all_transactions = self.ledger_repository.get_user_ledger_transactions(user_id)
+        total_transactions = len(all_transactions)
+
+        # Apply pagination
+        start_idx = offset
+        end_idx = min(offset + limit, total_transactions)
+        paginated_transactions = all_transactions[start_idx:end_idx] if start_idx < total_transactions else []
+
+        return paginated_transactions, total_transactions

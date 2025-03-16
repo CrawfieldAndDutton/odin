@@ -5,10 +5,13 @@ from typing import Dict, Any, Tuple
 
 # Third-party library imports
 import requests
+import razorpay
 from requests.models import Response
+from fastapi import HTTPException
 
 # Local application imports
 from dependencies.logger import logger
+from dependencies.configuration import RazorpayConfiguration
 
 
 class BaseService(ABC):
@@ -50,3 +53,18 @@ class BaseService(ABC):
         end_time = datetime.now()
         tat = BaseService.calculate_tat(start_time, end_time)
         return response, tat
+
+    @staticmethod
+    def get_razorpay_client():
+        """
+        Get a configured Razorpay client.
+
+        Returns:
+            razorpay.Client: Configured Razorpay client
+        """
+        try:
+            return razorpay.Client(auth=(RazorpayConfiguration.RAZORPAY_KEY_ID,
+                                         RazorpayConfiguration.RAZORPAY_KEY_SECRET))
+        except Exception as e:
+            logger.error(f"Failed to initialize Razorpay client: {str(e)}")
+            raise HTTPException(status_code=500, detail="Payment service unavailable")

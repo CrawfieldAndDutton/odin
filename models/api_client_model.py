@@ -10,10 +10,9 @@ from mongoengine import (
     ListField,
     DateTimeField,
 )
-from pytz import timezone
 
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
+# Local application imports
+from dependencies.constants import IST
 
 
 class APIClient(Document):
@@ -23,8 +22,8 @@ class APIClient(Document):
     is_enabled = BooleanField(default=True)
     credits = FloatField(default=0.0)
     enabled_apis = ListField(StringField(), default=list)
-    created_at = DateTimeField(default=lambda: datetime.now(ist))
-    updated_at = DateTimeField(default=lambda: datetime.now(ist))
+    created_at = DateTimeField(default=lambda: datetime.now(IST))
+    updated_at = DateTimeField(default=lambda: datetime.now(IST))
 
     meta = {
         'collection': 'api_clients',
@@ -37,5 +36,5 @@ class APIClient(Document):
     }
 
     def save(self, *args, **kwargs):
-        self.updated_at = datetime.now(ist)
+        self.updated_at = datetime.now(IST)
         return super(APIClient, self).save(*args, **kwargs)

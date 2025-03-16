@@ -36,6 +36,8 @@ class AppConfiguration:
     SMTP_PORT = int(os.getenv("SMTP_PORT"))
     SMTP_USER = os.getenv("SMTP_USER")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+    BACKEND_BASE_URL: str = os.getenv("BACKEND_BASE_URL")
+    FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL")
 
 
 class ServicePricing:
@@ -104,3 +106,8 @@ class KYCProvider(BaseEnum):
 
     AITAN = "AITAN"
     INTERNAL = "INTERNAL"
+
+
+class RazorpayConfiguration:
+    RAZORPAY_KEY_ID: str = os.getenv("RAZORPAY_KEY_ID", "")
+    RAZORPAY_KEY_SECRET: str = os.getenv("RAZORPAY_KEY_SECRET", "")

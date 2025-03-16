@@ -8,11 +8,9 @@ from mongoengine import (
     FloatField,
     DateTimeField
 )
-from pytz import timezone
 
-
-# Define IST timezone
-ist = timezone('Asia/Kolkata')
+# Local application imports
+from dependencies.constants import IST
 
 
 class UserLedgerTransaction(Document):
@@ -33,8 +31,8 @@ class UserLedgerTransaction(Document):
     amount = FloatField(required=True)
     description = StringField(required=True)
     balance = FloatField(required=True)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=datetime.now(IST))
+    updated_at = DateTimeField(default=datetime.now(IST))
     description = StringField()
 
     meta = {
@@ -50,5 +48,5 @@ class UserLedgerTransaction(Document):
 
     def save(self, *args, **kwargs):
         """Override save to update `updated_at` timestamp."""
-        self.updated_at = datetime.now(ist)
+        self.updated_at = datetime.now(IST)
         return super().save(*args, **kwargs)
