@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Email Verification</title>
+</head>
+<body>
+    <p>Dear {{ user_name }},</p>
+
+    <p>Thank you for registering on <strong>{{ company_name }}</strong>!</p>
+
+    <p>Your OTP code is: <strong>{{ otp_code }}</strong></p>
+
+    <p>This code is valid for <strong>{{ otp_expiry }} days</strong>. Please do not share it with anyone.</p>
+
+    <p>If you did not request this, please ignore this email.</p>
+
+    <p>Best regards,<br>
+    <strong>{{ company_name }}</strong><br>
+    <a href="{{ company_website }}">{{ company_website }}</a></p>
+</body>
+</html>

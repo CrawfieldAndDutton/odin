@@ -5,7 +5,7 @@ from enum import Enum
 # Third-party library imports
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv("environment/dev.env")
 
 
 class BaseEnum(Enum):
