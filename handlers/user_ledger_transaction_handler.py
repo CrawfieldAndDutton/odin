@@ -126,6 +126,10 @@ class UserLedgerTransactionHandler:
         paginated_transactions = all_transactions[start_idx:end_idx] if start_idx < total_transactions else []
 
         # Convert transactions to dictionaries
-        transaction_dicts = [txn.to_mongo() for txn in paginated_transactions]
+        transaction_dicts = []
+        for txn in paginated_transactions:
+            event_dict = txn.to_mongo()
+            event_dict.pop('_id', None)  # Remove MongoDB _id field
+            transaction_dicts.append(event_dict)
 
         return transaction_dicts, total_transactions
