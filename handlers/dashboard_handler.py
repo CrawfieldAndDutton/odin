@@ -1,11 +1,12 @@
 from typing import Dict, List
-from datetime import datetime, IST
-from smtplib import SMTPException
+from datetime import datetime
 
 from repositories.user_ledger_transaction_repository import UserLedgerTransactionRepository
 from repositories.user_repository import UserRepository
 
+from dependencies.constants import IST
 from dependencies.logger import logger
+
 from services.email_service import EmailService
 
 class DashboardHandler:
