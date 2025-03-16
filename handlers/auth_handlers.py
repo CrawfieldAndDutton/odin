@@ -355,6 +355,12 @@ class AuthHandler:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already registered",
             )
+        if UserRepository.get_user_by_phone_number(user_data.phone_number):
+            logger.error("Phone number already registered")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number already registered",
+            )
 
         user = UserRepository.create_user(user_data)
 
