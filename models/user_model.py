@@ -18,7 +18,7 @@ from dependencies.constants import IST
 class User(Document):
     email = EmailField(required=True, unique=True)
     username = StringField(required=True, unique=True)
-    phone_number = StringField(required=True)
+    phone_number = StringField()
     hashed_password = StringField(required=True)
     first_name = StringField()
     last_name = StringField()
@@ -63,14 +63,16 @@ class VerifiedUserInformation(Document):
     phone_number = StringField(required=True, unique=True)
     email = StringField(required=True, unique=True)
     otp = StringField()
-    is_verified = BooleanField(default=False)
+    is_email_verified = BooleanField(default=False)
     created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
 
     meta = {
-        'collection': 'verified_user_information',
+        'collection': 'verified_users_informations',
         'indexes': [
             'phone_number',
-            'email'
+            'email',
+            'otp'
         ],
         "db_alias": "kyc_fabric_db"
     }

@@ -2,6 +2,7 @@
 from typing import Optional
 
 # Third-party library imports
+from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 
 # Local application imports
@@ -208,12 +209,12 @@ class UserRepository:
     @staticmethod
     def create_user_otp(email: str, phone_number: str, otp: str):
         # Check if user already exists
-        existing_user = VerifiedUserInformation.objects.filter(email=email, phone_number=phone_number).first()
+        existing_user = VerifiedUserInformation.objects.filter(Q(email=email) | Q(phone_number=phone_number)).first()
         if existing_user:
             # Update the OTP and phone_number for existing user
             existing_user.otp = otp
             existing_user.phone_number = phone_number  # Update phone_number number
-            existing_user.is_verified = False  # Reset verification status
+            existing_user.is_email_verified = False  # Reset verification status
             existing_user.save()
             return existing_user
         else:
@@ -230,6 +231,6 @@ class UserRepository:
     def verify_user(email: str, otp: str):
         user = VerifiedUserInformation.objects(email=email, otp=otp).first()
         if user:
-            user.is_verified = True
+            user.is_email_verified = True
             user.save()
         return user
