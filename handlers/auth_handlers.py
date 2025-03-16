@@ -12,7 +12,7 @@ from mongoengine.errors import DoesNotExist
 
 # Local application imports
 from dependencies.logger import logger
-from dependencies.configuration import AppConfiguration as settings
+from dependencies.configuration import AppConfiguration
 from dependencies.password_utils import PasswordUtils
 from dependencies.exceptions import CredentialsException, UserNotFoundException, UserAlreadyExistsException
 from dependencies.constants import IST
@@ -25,8 +25,6 @@ from models.user_model import User as UserModel, RefreshToken
 from models.api_client_model import APIClient as APIClientModel
 
 from services.email_service import EmailService
-
-ist = timezone('Asia/Kolkata')
 
 
 class AuthHandler:
@@ -48,7 +46,7 @@ class AuthHandler:
             UserNotFoundException: If the user does not exist.
         """
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(token, AppConfiguration.SECRET_KEY, algorithms=[AppConfiguration.ALGORITHM])
             token_data = TokenPayload(**payload)
 
             if token_data.sub is None or token_data.type != "access":
@@ -118,9 +116,9 @@ class AuthHandler:
         Returns:
             str: The encoded JWT access token.
         """
-        expire = datetime.now(IST) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = datetime.now(IST) + (expires_delta or timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES))
         to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
-        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, AppConfiguration.SECRET_KEY, algorithm=AppConfiguration.ALGORITHM)
         return encoded_jwt
 
     @staticmethod
@@ -135,13 +133,13 @@ class AuthHandler:
             Tuple[str, datetime]: The encoded JWT refresh token and its expiration time.
         """
         token_value = secrets.token_hex(32)
-        expires_at = datetime.now(IST) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = datetime.now(IST) + timedelta(days=AppConfiguration.REFRESH_TOKEN_EXPIRE_DAYS)
 
         refresh_token = RefreshToken(user_id=user_id, token=token_value, expires_at=expires_at)
         refresh_token.save()
 
         to_encode = {"exp": expires_at, "sub": str(user_id), "jti": token_value, "type": "refresh"}
-        encoded_jwt = jwt.encode(to_encode, settings.REFRESH_SECRET_KEY, algorithm=settings.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, AppConfiguration.REFRESH_SECRET_KEY, algorithm=AppConfiguration.ALGORITHM)
 
         return encoded_jwt, expires_at
 
@@ -184,7 +182,7 @@ class AuthHandler:
             Optional[str]: The user ID if the token is valid, otherwise None.
         """
         try:
-            payload = jwt.decode(token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(token, AppConfiguration.REFRESH_SECRET_KEY, algorithms=[AppConfiguration.ALGORITHM])
             if payload.get("type") != "refresh":
                 return None
 
@@ -219,7 +217,7 @@ class AuthHandler:
             bool: True if the token was deleted, False otherwise.
         """
         try:
-            payload = jwt.decode(token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(token, AppConfiguration.REFRESH_SECRET_KEY, algorithms=[AppConfiguration.ALGORITHM])
             jti = payload.get("jti")
             user_id = payload.get("sub")
             if not jti or not user_id:
@@ -271,7 +269,7 @@ class AuthHandler:
         user.is_active = True
         user.save()
 
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = AuthHandler.create_access_token(subject=str(user.id), expires_delta=access_token_expires)
         refresh_token, expires_at = AuthHandler.create_refresh_token(user_id=str(user.id))
 
@@ -305,7 +303,7 @@ class AuthHandler:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = AuthHandler.create_access_token(subject=user_id, expires_delta=access_token_expires)
 
         return {

@@ -1,6 +1,6 @@
 # Standard library imports
 from typing import Any
-import json
+
 # Third-party library imports
 from fastapi import APIRouter, Depends, status, security, HTTPException
 
@@ -268,7 +268,7 @@ def get_ledger_history(
         )
 
 
-@auth_router.post("/send_otp/", response_model=UserVerifyResponse)
+@auth_router.post("/auth/send_otp", response_model=UserVerifyResponse)
 def send_otp(user: UserOTPCreate):
     try:
         # Log the request data for debugging
@@ -284,14 +284,14 @@ def send_otp(user: UserOTPCreate):
         }
     except Exception as e:
         # Log the error for debugging
-        logger.error(f"Error sending OTP: {str(e)}")
+        logger.exception(f"Error sending OTP: {str(e)}")
         # Handle any exceptions that may occur
         raise HTTPException(
             status_code=500, detail=f"Failed to send OTP: {str(e)}"
-            )
+        )
 
 
-@auth_router.post("/verify_otp/", response_model=UserVerifyResponse)
+@auth_router.post("/auth/verify_otp", response_model=UserVerifyResponse,)
 def verify_otp(user: UserVerifyRequest):
     try:
         is_verified = AuthHandler.verify_otp(user.email, user.otp)
@@ -311,4 +311,4 @@ def verify_otp(user: UserVerifyRequest):
         # Handle any exceptions that may occur
         raise HTTPException(
             status_code=500, detail=f"Failed to verify OTP: {str(e)}"
-            )
+        )

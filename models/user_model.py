@@ -65,3 +65,12 @@ class VerifiedUserInformation(Document):
     otp = StringField()
     is_verified = BooleanField(default=False)
     created_at = DateTimeField(default=datetime.now)
+
+    meta = {
+        'collection': 'verified_user_information',
+        'indexes': [
+            'phone_number',
+            'email'
+        ],
+        "db_alias": "kyc_fabric_db"
+    }
