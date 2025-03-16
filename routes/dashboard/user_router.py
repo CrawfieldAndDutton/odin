@@ -12,6 +12,7 @@ from dto.user_dto import (
     UserCreate,
     UserUpdate,
     RefreshTokenRequest,
+    UserOTPCreate,
     UserVerifyResponse,
     UserVerifyRequest
 )
@@ -264,18 +265,18 @@ def get_ledger_history(
 
 
 @auth_router.post("/send_otp/", response_model=UserVerifyResponse)
-def send_otp(user: UserCreate):
+def send_otp(user: UserOTPCreate):
     try:
         # Log the request data for debugging
         logger.info(
-            f"Received request with email: {user.email}, mobile: {user.mobile}"
+            f"Received request with email: {user.email}, phone_number: {user.phone_number}"
         )
 
-        AuthHandler.send_otp(user.email, user.mobile)
+        AuthHandler.send_otp(user.email, user.phone_number)
         return {
             "email": user.email,
             "is_verified": False,
-            "mobile": user.mobile
+            "phone_number": user.phone_number
         }
     except Exception as e:
         # Log the error for debugging
@@ -293,14 +294,14 @@ def verify_otp(user: UserVerifyRequest):
         if not is_verified:
             raise HTTPException(status_code=400, detail="Invalid OTP")
 
-        # Get the user to include mobile in response
+        # Get the user to include phone_number in response
         from repositories.user_repository import UserRepository
         user_data = UserRepository.find_user_by_email(user.email)
 
         return {
             "email": user.email,
             "is_verified": True,
-            "mobile": user_data.mobile
+            "phone_number": user_data.phone_number
         }
     except Exception as e:
         # Handle any exceptions that may occur
