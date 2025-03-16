@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, status, security, HTTPException
 from dto.user_dto import (
     Token,
     TokenRefresh,
+    ContactUsLead,
     User,
     UserCreate,
     UserUpdate,
@@ -312,3 +313,16 @@ def verify_otp(user: UserVerifyRequest):
         raise HTTPException(
             status_code=500, detail=f"Failed to verify OTP: {str(e)}"
         )
+
+@auth_router.post("/contact-us/capture", response_model=APISuccessResponse, tags=["Dashboard"])
+def capture_contact_us_lead(lead_data: ContactUsLead):
+    try:
+        result = DashboardHandler().capture_contact_us_lead(lead_data)
+        return APISuccessResponse(
+            http_status_code=status.HTTP_200_OK,
+            message="Successfully captured contact us lead",
+            result=result
+        )
+    except Exception:
+        logger.exception(f"Error capturing contact us lead")
+        raise HTTPException(status_code=500, detail="Failed to capture contact us lead")

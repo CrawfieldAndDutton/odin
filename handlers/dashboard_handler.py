@@ -1,10 +1,12 @@
 from typing import Dict, List
+from datetime import datetime, IST
+from smtplib import SMTPException
 
 from repositories.user_ledger_transaction_repository import UserLedgerTransactionRepository
 from repositories.user_repository import UserRepository
 
 from dependencies.logger import logger
-
+from services.email_service import EmailService
 
 class DashboardHandler:
 
@@ -66,3 +68,47 @@ class DashboardHandler:
                 f"and service {service_name}: {str(e)}"
             )
             raise e
+
+    def capture_contact_us_lead(self, name: str, lead_email: str, company: str, phone: str, message: str) -> bool:
+        """
+        Capture and process a contact us form submission.
+
+        Args:
+            name: Full name of the person submitting the form
+            lead_email: Email address of the lead
+            company: Company name
+            phone: Contact phone number
+            message: Inquiry or message from the lead
+
+        Returns:
+            bool: True if the lead was successfully captured and processed, False otherwise
+
+        Raises:
+            ValueError: If any of the required fields are empty or invalid
+            SMTPException: If there's an error sending the notification email
+        """
+        try:
+            # Validate inputs
+            if not all([name, lead_email, company, phone, message]):
+                logger.error("Missing required fields in contact us form")
+                raise ValueError("All fields are required")
+
+            # Process the lead (existing code here)
+            lead_data = {
+                "name": name,
+                "email": lead_email,
+                "company": company,
+                "phone": phone,
+                "message": message,
+                "created_at": datetime.now(IST)
+            }
+
+            # Send notification email
+            EmailService.send_contact_us_notification(lead_data)
+
+            logger.info(f"Successfully captured contact us lead for {lead_email}")
+            return True
+
+        except Exception as e:
+            logger.exception(f"Error processing contact us lead: {str(e)}")
+            return False

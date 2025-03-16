@@ -79,3 +79,11 @@ class UserVerifyRequest(BaseModel):
 class UserVerifyResponse(BaseModel):
     email: EmailStr
     is_email_verified: bool
+
+
+class ContactUsLead(BaseModel):
+    name: str
+    lead_email: EmailStr
+    company: str
+    phone: str
+    message: str

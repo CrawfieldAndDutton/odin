@@ -30,7 +30,8 @@ class EmailService:
             server.login(AppConfiguration.SMTP_USER, AppConfiguration.SMTP_PASSWORD)
             server.sendmail(AppConfiguration.SMTP_USER, [email], msg.as_string())
 
-    def send_contact_us_lead_email(self, name: str, lead_email: str, company: str, phone: str, message: str):
+    @staticmethod
+    def send_contact_us_lead_email(name: str, lead_email: str, company: str, phone: str, message: str):
         # Get the template
         template = EmailService.env.get_template('contact_us_lead.html')
 
