@@ -264,7 +264,7 @@ def get_ledger_history(
         )
 
 
-@auth_router.post("/send_otp/", response_model=UserVerifyResponse)
+@auth_router.post("/auth/send_otp", response_model=UserVerifyResponse, tags=["Auth"])
 def send_otp(user: UserOTPCreate):
     try:
         # Log the request data for debugging
@@ -275,7 +275,7 @@ def send_otp(user: UserOTPCreate):
         AuthHandler.send_otp(user.email, user.phone_number)
         return {
             "email": user.email,
-            "is_verified": False,
+            "is_email_verified": False,
             "phone_number": user.phone_number
         }
     except Exception as e:
@@ -287,11 +287,11 @@ def send_otp(user: UserOTPCreate):
             )
 
 
-@auth_router.post("/verify_otp/", response_model=UserVerifyResponse)
+@auth_router.post("/auth/verify_otp", response_model=UserVerifyResponse, tags=["Auth"])
 def verify_otp(user: UserVerifyRequest):
     try:
-        is_verified = AuthHandler.verify_otp(user.email, user.otp)
-        if not is_verified:
+        is_email_verified = AuthHandler.verify_otp(user.email, user.otp)
+        if not is_email_verified:
             raise HTTPException(status_code=400, detail="Invalid OTP")
 
         # Get the user to include phone_number in response
@@ -300,7 +300,7 @@ def verify_otp(user: UserVerifyRequest):
 
         return {
             "email": user.email,
-            "is_verified": True,
+            "is_email_verified": True,
             "phone_number": user_data.phone_number
         }
     except Exception as e:

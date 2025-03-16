@@ -68,7 +68,7 @@ class RefreshTokenRequest(BaseModel):
 
 class UserOTPCreate(BaseModel):
     email: EmailStr
-    phone_number: str
+    phone_number: Optional[str] = None
 
 
 class UserVerifyRequest(BaseModel):
@@ -78,4 +78,4 @@ class UserVerifyRequest(BaseModel):
 
 class UserVerifyResponse(BaseModel):
     email: EmailStr
-    is_verified: bool
+    is_email_verified: bool

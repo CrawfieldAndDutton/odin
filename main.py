@@ -36,13 +36,6 @@ connect(
     tlsAllowInvalidCertificates=True
 )
 
-# Add a default connection as well
-connect(
-    db=AppConfiguration.MAIN_DB,
-    host=AppConfiguration.MONGO_URI,
-    tlsAllowInvalidCertificates=True
-)
-
 
 @app.get("/")
 def read_root():
