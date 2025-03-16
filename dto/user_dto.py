@@ -64,3 +64,18 @@ class TokenPayload(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class UserOTPCreate(BaseModel):
+    email: EmailStr
+    phone_number: str
+
+
+class UserVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+
+class UserVerifyResponse(BaseModel):
+    email: EmailStr
+    is_verified: bool
