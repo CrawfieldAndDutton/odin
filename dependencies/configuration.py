@@ -32,19 +32,13 @@ class AppConfiguration:
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
-    # SMTP_HOST = os.getenv("SMTP_HOST")
-    # SMTP_PORT = int(os.getenv("SMTP_PORT"))
-    # SMTP_USER = os.getenv("SMTP_USER")
-    # SMTP_CC_USER = os.getenv("SMTP_CC_USER")
-    # SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT"))
+    SMTP_USER = os.getenv("SMTP_USER")
+    SMTP_CC_USER = os.getenv("SMTP_CC_USER")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
     BACKEND_BASE_URL: str = os.getenv("BACKEND_BASE_URL")
     FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL")
-
-    SMTP_HOST = 'os.getenv("SMTP_HOST")'
-    SMTP_PORT = 'int(os.getenv("SMTP_PORT"))'
-    SMTP_USER = 'os.getenv("SMTP_USER")'
-    SMTP_CC_USER = 'os.getenv("SMTP_CC_USER")'
-    SMTP_PASSWORD = 'os.getenv("SMTP_PASSWORD")'
 
 
 class ServicePricing:
