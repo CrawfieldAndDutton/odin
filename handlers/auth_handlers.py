@@ -508,10 +508,30 @@ class AuthHandler:
     @staticmethod
     def send_otp(email: str, phone_number: str):
         otp = AuthHandler.generate_otp()
-        VerifiedUserInformationRepository.create_user_otp(email, phone_number, otp)
+        verified_user_information_repository = VerifiedUserInformationRepository()
+        verified_user_information_obj = verified_user_information_repository.get_user_by_email_or_phone_number(
+            email, phone_number
+        )
+        if verified_user_information_obj:
+            verified_user_information_obj.otp = otp
+            verified_user_information_obj.is_email_verified = False
+            verified_user_information_obj.save()
+        else:
+            verified_user_information_obj = verified_user_information_repository.create_user_otp(
+                email, phone_number, otp
+            )
+
         EmailService.send_otp_email(email, otp)
 
     @staticmethod
     def verify_otp(email: str, otp: str):
-        user = VerifiedUserInformationRepository.verify_user(email, otp)
-        return user is not None
+        verified_user_information_obj = VerifiedUserInformationRepository.find_user_by_email(email)
+        if not verified_user_information_obj:
+            return False
+
+        if verified_user_information_obj.otp == otp:
+            verified_user_information_obj.is_email_verified = True
+            verified_user_information_obj.save()
+            return True
+
+        return False
