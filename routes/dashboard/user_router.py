@@ -400,6 +400,7 @@ def capture_contact_us_lead(lead_data: ContactUsLead):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(ve)
         )
+
     except Exception as e:
         logger.exception("Error capturing contact us lead")
         raise HTTPException(
