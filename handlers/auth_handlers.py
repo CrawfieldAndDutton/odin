@@ -20,6 +20,7 @@ from dto.user_dto import TokenPayload, UserCreate, UserUpdate, Token, TokenRefre
 
 from repositories.user_repository import UserRepository
 from repositories.api_client_repository import APIClientRepository
+from repositories.verified_user_information_repository import VerifiedUserInformationRepository
 
 from models.user_model import User as UserModel, RefreshToken
 from models.api_client_model import APIClient as APIClientModel
@@ -507,10 +508,10 @@ class AuthHandler:
     @staticmethod
     def send_otp(email: str, phone_number: str):
         otp = AuthHandler.generate_otp()
-        UserRepository.create_user_otp(email, phone_number, otp)
+        VerifiedUserInformationRepository.create_user_otp(email, phone_number, otp)
         EmailService.send_otp_email(email, otp)
 
     @staticmethod
     def verify_otp(email: str, otp: str):
-        user = UserRepository.verify_user(email, otp)
+        user = VerifiedUserInformationRepository.verify_user(email, otp)
         return user is not None

@@ -351,6 +351,7 @@ def verify_otp(user: UserVerifyRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to verify OTP: {str(e)}"
         )
 
+
 @auth_router.post("/contact-us/capture", response_model=APISuccessResponse, tags=["Dashboard"])
 def capture_contact_us_lead(lead_data: ContactUsLead):
     """
@@ -399,7 +400,7 @@ def capture_contact_us_lead(lead_data: ContactUsLead):
             detail=str(ve)
         )
     except Exception as e:
-        logger.exception(f"Error capturing contact us lead")
+        logger.exception("Error capturing contact us lead")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to capture contact us lead"
