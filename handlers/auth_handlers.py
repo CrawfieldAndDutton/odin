@@ -16,6 +16,7 @@ from dependencies.configuration import AppConfiguration
 from dependencies.password_utils import PasswordUtils
 from dependencies.exceptions import CredentialsException, UserNotFoundException, UserAlreadyExistsException
 from dependencies.constants import IST
+
 from dto.user_dto import TokenPayload, UserCreate, UserUpdate, Token, TokenRefresh, User, RefreshTokenRequest
 
 from repositories.user_repository import UserRepository
@@ -272,7 +273,7 @@ class AuthHandler:
 
         access_token_expires = timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = AuthHandler.create_access_token(subject=str(user.id), expires_delta=access_token_expires)
-        refresh_token, expires_at = AuthHandler.create_refresh_token(user_id=str(user.id))
+        refresh_token, _ = AuthHandler.create_refresh_token(user_id=str(user.id))
 
         return {
             "access_token": access_token,
@@ -359,13 +360,6 @@ class AuthHandler:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already registered",
             )
-        if UserRepository.get_user_by_phone_number(user_data.phone_number):
-            logger.error("Phone number already registered")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number already registered",
-            )
-
         if UserRepository.get_user_by_phone_number(user_data.phone_number):
             logger.error("Phone number already registered")
             raise HTTPException(

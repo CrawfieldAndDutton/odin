@@ -38,6 +38,12 @@ class UserRepository:
     def get_user_by_phone_number(phone_number: str) -> Optional[UserModel]:
         """
         Get a user by phone number.
+
+        Args:
+            phone_number: The phone number to search for
+
+        Returns:
+            UserModel or None: The user if found, None otherwise
         """
         try:
             return UserModel.objects.get(phone_number=phone_number)
@@ -192,7 +198,16 @@ class UserRepository:
 
     @staticmethod
     def update_user_credits(user_id: str, latest_txn: UserLedgerTransaction) -> UserModel:
-        """Update user credits based on the latest ledger transaction balance."""
+        """
+        Update user credits based on the latest ledger transaction balance.
+
+        Args:
+            user_id: The user ID to update
+            latest_txn: The latest ledger transaction
+
+        Returns:
+            UserModel: The updated user
+        """
         try:
             user = UserModel.objects.get(id=user_id)
             user.credits = latest_txn.balance
