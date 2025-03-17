@@ -11,6 +11,7 @@ from mongoengine import (
 
 # Local application imports
 from dependencies.constants import IST
+from dependencies.configuration import AppConfiguration
 
 
 class UserLedgerTransaction(Document):
@@ -42,7 +43,7 @@ class UserLedgerTransaction(Document):
             'type'
         ],
         'ordering': ['-created_at'],
-        "db_alias": "kyc_fabric_db"
+        "db_alias": AppConfiguration.MAIN_DB
     }
 
     def save(self, *args, **kwargs):
