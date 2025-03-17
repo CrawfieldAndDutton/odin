@@ -503,10 +503,32 @@ class AuthHandler:
 
     @staticmethod
     def generate_otp():
+        """
+        Generate a random 6-digit OTP (One-Time Password).
+
+        Returns:
+            str: A 6-digit OTP as a string
+        """
         return str(random.randint(100000, 999999))
 
     @staticmethod
     def send_otp(email: str, phone_number: str):
+        """
+        Send an OTP to a user's email address and store it in the database.
+
+        This function:
+        1. Generates a new OTP
+        2. Checks if user exists in verified user information
+        3. Updates or creates user record with new OTP
+        4. Sends the OTP via email
+
+        Args:
+            email (str): The user's email address to send the OTP to
+            phone_number (str): The user's phone number for record keeping
+
+        Raises:
+            Exception: If there's an error sending the email or saving to database
+        """
         otp = AuthHandler.generate_otp()
         verified_user_information_repository = VerifiedUserInformationRepository()
         verified_user_information_obj = verified_user_information_repository.get_user_by_email_or_phone_number(
@@ -517,7 +539,7 @@ class AuthHandler:
             verified_user_information_obj.is_email_verified = False
             verified_user_information_obj.save()
         else:
-            verified_user_information_obj = verified_user_information_repository.create_user_otp(
+            verified_user_information_obj = verified_user_information_repository.create_verified_user_information(
                 email, phone_number, otp
             )
 
@@ -525,13 +547,53 @@ class AuthHandler:
 
     @staticmethod
     def verify_otp(email: str, otp: str):
-        verified_user_information_obj = VerifiedUserInformationRepository.find_user_by_email(email)
-        if not verified_user_information_obj:
-            return False
+        """
+        Verify a user's OTP and mark their email as verified if correct.
 
-        if verified_user_information_obj.otp == otp:
+        This function:
+        1. Retrieves the user's stored OTP
+        2. Compares it with the provided OTP
+        3. If matched, marks the email as verified
+        4. Returns success/failure status
+
+        Args:
+            email (str): The user's email address to verify
+            otp (str): The OTP to verify against the stored value
+
+        Returns:
+            bool: True if OTP is valid and verification successful, False otherwise
+
+        Raises:
+            ValueError: If email or OTP is empty or invalid
+            Exception: If there's an error during verification process
+        """
+        try:
+            # Validate inputs
+            if not email or not otp:
+                logger.error("Email or OTP is empty")
+                raise ValueError("Email and OTP are required")
+
+            # Get user information from repository
+            verified_user_information_obj = VerifiedUserInformationRepository.find_user_by_email(email)
+            if not verified_user_information_obj:
+                logger.error(f"No user found with email: {email}")
+                return False
+
+            # Verify OTP
+            if verified_user_information_obj.otp != otp:
+                logger.error(f"Invalid OTP for email: {email}")
+                return False
+
+            # Mark email as verified
             verified_user_information_obj.is_email_verified = True
             verified_user_information_obj.save()
+
+            logger.info(f"Successfully verified email: {email}")
             return True
 
-        return False
+        except ValueError as ve:
+            logger.error(f"Validation error in verify_otp: {str(ve)}")
+            raise
+        except Exception as e:
+            logger.exception(f"Error verifying OTP for email {email}: {str(e)}")
+            raise Exception(f"Failed to verify OTP: {str(e)}")
