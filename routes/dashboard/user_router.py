@@ -269,7 +269,7 @@ def get_ledger_history(
         )
 
 
-@auth_router.post("/auth/send_otp/", response_model=UserVerifyResponse, tags=["Auth"])
+@auth_router.post("/auth/send_otp", response_model=UserVerifyResponse, tags=["Auth"])
 def send_otp(user: UserOTPCreate):
     """
     Send OTP (One-Time Password) to the user's email address for verification.
@@ -312,7 +312,7 @@ def send_otp(user: UserOTPCreate):
         )
 
 
-@auth_router.post("/auth/verify_otp/", response_model=UserVerifyResponse, tags=["Auth"])
+@auth_router.post("/auth/verify_otp", response_model=UserVerifyResponse, tags=["Auth"])
 def verify_otp(user: UserVerifyRequest):
     """
     Verify the OTP (One-Time Password) sent to the user's email.
