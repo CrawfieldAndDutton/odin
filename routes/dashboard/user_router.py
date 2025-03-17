@@ -89,7 +89,17 @@ def register(user_data: UserCreate) -> User:
     Returns:
         User: Details of the newly registered user.
     """
-    return AuthHandler.register_new_user(user_data)
+    try:
+        return AuthHandler.register_new_user(user_data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.exception(f"Error registering new user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to register new user: {str(e)}"
+        )
+
 
 # User Routes
 
@@ -303,6 +313,8 @@ def send_otp(user: UserOTPCreate):
         }
         logger.info(f"Response body: {response_body}")
         return response_body
+    except HTTPException as e:
+        raise e
     except Exception as e:
         # Log the error for debugging
         logger.exception(f"Error sending OTP: {str(e)}")

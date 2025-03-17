@@ -347,18 +347,33 @@ class AuthHandler:
 
         Raises:
             UserAlreadyExistsException: If a user with the same email already exists.
-            HTTPException: If the username is already registered.
+            HTTPException: If the username is already registered, email is not verified, or phone number is already
+            registered.
         """
+
+        # Check if email is verified
+        verified_user = VerifiedUserInformationRepository.find_user_by_email(user_data.email)
+        if not verified_user or not verified_user.is_email_verified:
+            logger.error(f"Email {user_data.email} is not verified")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is not verified. Please verify your email first.",
+            )
+
+        # Check for existing email
+
         if UserRepository.get_user_by_email(user_data.email):
             logger.info("User with this email already exists")
             raise UserAlreadyExistsException()
 
+        # Check for existing username
         if UserRepository.get_user_by_username(user_data.username):
             logger.error("Username already registered")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already registered",
             )
+        # Check for existing phone number
         if UserRepository.get_user_by_phone_number(user_data.phone_number):
             logger.error("Phone number already registered")
             raise HTTPException(
@@ -366,15 +381,8 @@ class AuthHandler:
                 detail="Phone number already registered",
             )
 
-        if UserRepository.get_user_by_phone_number(user_data.phone_number):
-            logger.error("Phone number already registered")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number already registered",
-            )
-
+        # Create new user
         user = UserRepository.create_user(user_data)
-
         return User(
             _id=str(user.id),
             email=user.email,
@@ -514,13 +522,7 @@ class AuthHandler:
     @staticmethod
     def send_otp(email: str, phone_number: str):
         """
-        Send an OTP to a user's email address and store it in the database.
-
-        This function:
-        1. Generates a new OTP
-        2. Checks if user exists in verified user information
-        3. Updates or creates user record with new OTP
-        4. Sends the OTP via email
+        Send OTP to a user's email for verification.
 
         Args:
             email (str): The user's email address to send the OTP to
@@ -529,6 +531,15 @@ class AuthHandler:
         Raises:
             Exception: If there's an error sending the email or saving to database
         """
+        # First check if user already exists
+        user_repository = UserRepository()
+        if user_repository.get_user_by_email(email):
+            logger.error(f"User with email {email} already exists")
+            raise UserAlreadyExistsException()
+        if user_repository.get_user_by_phone_number(phone_number):
+            logger.error(f"User with phone number {phone_number} already exists")
+            raise UserAlreadyExistsException()
+
         otp = AuthHandler.generate_otp()
         verified_user_information_repository = VerifiedUserInformationRepository()
         verified_user_information_obj = verified_user_information_repository.get_user_by_email_or_phone_number(

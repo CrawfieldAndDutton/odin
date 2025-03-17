@@ -20,6 +20,9 @@ class UserCreate(UserBase):
     email: EmailStr
     username: str
     password: str
+    phone_number: str = Field(..., description="User's phone number", min_length=10, max_length=15)
+    first_name: str
+    last_name: str
 
 
 class UserUpdate(UserBase):
