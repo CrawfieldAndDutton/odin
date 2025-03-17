@@ -76,7 +76,8 @@ class PassportHandler:
                 file_number, dob, name, transaction)
 
         if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_PASSPORT.value):
-            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_PASSPORT.value)
+            self.user_ledger_transaction_handler.deduct_credits(
+                user_id, UserLedgerTransactionType.KYC_PASSPORT.value, f"{transaction.status}|{file_number}")
 
         return passport_verification_response, transaction.http_status_code
 

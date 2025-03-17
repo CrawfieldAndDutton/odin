@@ -73,7 +73,8 @@ class VoterHandler:
             voter_verification_response = self.__get_voter_kyc_details_from_api(epic_no, transaction)
 
         if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_VOTER.value):
-            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_VOTER.value)
+            self.user_ledger_transaction_handler.deduct_credits(
+                user_id, UserLedgerTransactionType.KYC_VOTER.value, f"{transaction.status}|{epic_no}")
 
         return voter_verification_response, transaction.http_status_code
 
