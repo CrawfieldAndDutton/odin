@@ -12,7 +12,7 @@ from mongoengine import (
 
 # Local application imports
 from dependencies.constants import IST
-
+from dependencies.configuration import AppConfiguration
 
 class PaymentTransaction(Document):
     """
@@ -52,7 +52,7 @@ class PaymentTransaction(Document):
             'created_at'
         ],
         'ordering': ['-created_at'],
-        "db_alias": "kyc_fabric_db"
+        "db_alias": AppConfiguration.MAIN_DB
     }
 
     def save(self, *args, **kwargs):
