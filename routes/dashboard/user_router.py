@@ -292,8 +292,8 @@ def send_otp(user: UserOTPCreate):
             - 400: If the email or phone number is invalid
     """
     logger.info(
-            f"Received request with email: {user.email}, phone_number: {user.phone_number}"
-        )
+        f"Received request with email: {user.email}, phone_number: {user.phone_number}"
+    )
     try:
         AuthHandler.send_otp(user.email, user.phone_number)
         response_body = {
@@ -346,10 +346,12 @@ def verify_otp(user: UserVerifyRequest):
         logger.info(f"Response body: {response_body}")
         return response_body
     except Exception as e:
+        logger.exception(f"Error verifying OTP: {str(e)}")
         # Handle any exceptions that may occur
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to verify OTP: {str(e)}"
         )
+
 
 @auth_router.post("/contact-us/capture", response_model=APISuccessResponse, tags=["Dashboard"])
 def capture_contact_us_lead(lead_data: ContactUsLead):
@@ -399,8 +401,8 @@ def capture_contact_us_lead(lead_data: ContactUsLead):
             detail=str(ve)
         )
     except Exception as e:
-        logger.exception(f"Error capturing contact us lead")
+        logger.exception("Error capturing contact us lead")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to capture contact us lead"
+            detail=f"Failed to capture contact us lead {str(e)}"
         )
