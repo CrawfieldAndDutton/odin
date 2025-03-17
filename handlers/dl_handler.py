@@ -85,7 +85,7 @@ class DLHandler:
         Get DL details from database cache.
 
         Args:
-            dl_no: DL number to verify
+            dl_no: DL number to verify.
 
         Returns:
             dict: Cached DL details or None if not found
