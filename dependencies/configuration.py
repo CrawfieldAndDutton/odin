@@ -35,6 +35,7 @@ class AppConfiguration:
     SMTP_HOST = os.getenv("SMTP_HOST")
     SMTP_PORT = int(os.getenv("SMTP_PORT"))
     SMTP_USER = os.getenv("SMTP_USER")
+    SMTP_CC_USER = os.getenv("SMTP_CC_USER")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
     BACKEND_BASE_URL: str = os.getenv("BACKEND_BASE_URL")
     FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL")

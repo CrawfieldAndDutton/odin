@@ -12,21 +12,21 @@ from mongoengine.errors import DoesNotExist
 
 # Local application imports
 from dependencies.logger import logger
-from dependencies.configuration import AppConfiguration as settings
+from dependencies.configuration import AppConfiguration
 from dependencies.password_utils import PasswordUtils
 from dependencies.exceptions import CredentialsException, UserNotFoundException, UserAlreadyExistsException
 from dependencies.constants import IST
+
 from dto.user_dto import TokenPayload, UserCreate, UserUpdate, Token, TokenRefresh, User, RefreshTokenRequest
 
 from repositories.user_repository import UserRepository
 from repositories.api_client_repository import APIClientRepository
+from repositories.verified_user_information_repository import VerifiedUserInformationRepository
 
 from models.user_model import User as UserModel, RefreshToken
 from models.api_client_model import APIClient as APIClientModel
 
-from services.user_service import EmailService
-
-ist = timezone('Asia/Kolkata')
+from services.email_service import EmailService
 
 
 class AuthHandler:
@@ -48,7 +48,7 @@ class AuthHandler:
             UserNotFoundException: If the user does not exist.
         """
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(token, AppConfiguration.SECRET_KEY, algorithms=[AppConfiguration.ALGORITHM])
             token_data = TokenPayload(**payload)
 
             if token_data.sub is None or token_data.type != "access":
@@ -118,9 +118,9 @@ class AuthHandler:
         Returns:
             str: The encoded JWT access token.
         """
-        expire = datetime.now(IST) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = datetime.now(IST) + (expires_delta or timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES))
         to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
-        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, AppConfiguration.SECRET_KEY, algorithm=AppConfiguration.ALGORITHM)
         return encoded_jwt
 
     @staticmethod
@@ -135,13 +135,13 @@ class AuthHandler:
             Tuple[str, datetime]: The encoded JWT refresh token and its expiration time.
         """
         token_value = secrets.token_hex(32)
-        expires_at = datetime.now(IST) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at = datetime.now(IST) + timedelta(days=AppConfiguration.REFRESH_TOKEN_EXPIRE_DAYS)
 
         refresh_token = RefreshToken(user_id=user_id, token=token_value, expires_at=expires_at)
         refresh_token.save()
 
         to_encode = {"exp": expires_at, "sub": str(user_id), "jti": token_value, "type": "refresh"}
-        encoded_jwt = jwt.encode(to_encode, settings.REFRESH_SECRET_KEY, algorithm=settings.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, AppConfiguration.REFRESH_SECRET_KEY, algorithm=AppConfiguration.ALGORITHM)
 
         return encoded_jwt, expires_at
 
@@ -184,7 +184,7 @@ class AuthHandler:
             Optional[str]: The user ID if the token is valid, otherwise None.
         """
         try:
-            payload = jwt.decode(token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(token, AppConfiguration.REFRESH_SECRET_KEY, algorithms=[AppConfiguration.ALGORITHM])
             if payload.get("type") != "refresh":
                 return None
 
@@ -219,7 +219,7 @@ class AuthHandler:
             bool: True if the token was deleted, False otherwise.
         """
         try:
-            payload = jwt.decode(token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(token, AppConfiguration.REFRESH_SECRET_KEY, algorithms=[AppConfiguration.ALGORITHM])
             jti = payload.get("jti")
             user_id = payload.get("sub")
             if not jti or not user_id:
@@ -271,9 +271,9 @@ class AuthHandler:
         user.is_active = True
         user.save()
 
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = AuthHandler.create_access_token(subject=str(user.id), expires_delta=access_token_expires)
-        refresh_token, expires_at = AuthHandler.create_refresh_token(user_id=str(user.id))
+        refresh_token, _ = AuthHandler.create_refresh_token(user_id=str(user.id))
 
         return {
             "access_token": access_token,
@@ -305,7 +305,7 @@ class AuthHandler:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = AuthHandler.create_access_token(subject=user_id, expires_delta=access_token_expires)
 
         return {
@@ -348,25 +348,33 @@ class AuthHandler:
 
         Raises:
             UserAlreadyExistsException: If a user with the same email already exists.
-            HTTPException: If the username is already registered.
+            HTTPException: If the username is already registered, email is not verified, or phone number is already
+            registered.
         """
+
+        # Check if email is verified
+        verified_user = VerifiedUserInformationRepository.find_user_by_email(user_data.email)
+        if not verified_user or not verified_user.is_email_verified:
+            logger.error(f"Email {user_data.email} is not verified")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is not verified. Please verify your email first.",
+            )
+
+        # Check for existing email
+
         if UserRepository.get_user_by_email(user_data.email):
             logger.info("User with this email already exists")
             raise UserAlreadyExistsException()
 
+        # Check for existing username
         if UserRepository.get_user_by_username(user_data.username):
             logger.error("Username already registered")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already registered",
             )
-        if UserRepository.get_user_by_phone_number(user_data.phone_number):
-            logger.error("Phone number already registered")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number already registered",
-            )
-
+        # Check for existing phone number
         if UserRepository.get_user_by_phone_number(user_data.phone_number):
             logger.error("Phone number already registered")
             raise HTTPException(
@@ -375,7 +383,6 @@ class AuthHandler:
             )
 
         user = UserRepository.create_user(user_data)
-
         return User(
             _id=str(user.id),
             email=user.email,
@@ -504,15 +511,100 @@ class AuthHandler:
 
     @staticmethod
     def generate_otp():
+        """
+        Generate a random 6-digit OTP (One-Time Password).
+
+        Returns:
+            str: A 6-digit OTP as a string
+        """
         return str(random.randint(100000, 999999))
 
     @staticmethod
     def send_otp(email: str, phone_number: str):
+        """
+        Send OTP to a user's email for verification.
+
+        Args:
+            email (str): The user's email address to send the OTP to
+            phone_number (str): The user's phone number for record keeping
+
+        Raises:
+            Exception: If there's an error sending the email or saving to database
+        """
+        # First check if user already exists
+        user_repository = UserRepository()
+        if user_repository.get_user_by_email(email):
+            logger.error(f"User with email {email} already exists")
+            raise UserAlreadyExistsException()
+        if user_repository.get_user_by_phone_number(phone_number):
+            logger.error(f"User with phone number {phone_number} already exists")
+            raise UserAlreadyExistsException()
+
         otp = AuthHandler.generate_otp()
-        UserRepository.create_user_otp(email, phone_number, otp)
+        verified_user_information_repository = VerifiedUserInformationRepository()
+        verified_user_information_obj = verified_user_information_repository.get_user_by_email_or_phone_number(
+            email, phone_number
+        )
+        if verified_user_information_obj:
+            verified_user_information_obj.otp = otp
+            verified_user_information_obj.is_email_verified = False
+            verified_user_information_obj.save()
+        else:
+            verified_user_information_obj = verified_user_information_repository.create_verified_user_information(
+                email, phone_number, otp
+            )
+
         EmailService.send_otp_email(email, otp)
 
     @staticmethod
     def verify_otp(email: str, otp: str):
-        user = UserRepository.verify_user(email, otp)
-        return user is not None
+        """
+        Verify a user's OTP and mark their email as verified if correct.
+
+        This function:
+        1. Retrieves the user's stored OTP
+        2. Compares it with the provided OTP
+        3. If matched, marks the email as verified
+        4. Returns success/failure status
+
+        Args:
+            email (str): The user's email address to verify
+            otp (str): The OTP to verify against the stored value
+
+        Returns:
+            bool: True if OTP is valid and verification successful, False otherwise
+
+        Raises:
+            ValueError: If email or OTP is empty or invalid
+            Exception: If there's an error during verification process
+        """
+        try:
+            # Validate inputs
+            if not email or not otp:
+                logger.error("Email or OTP is empty")
+                raise ValueError("Email and OTP are required")
+
+            # Get user information from repository
+            verified_user_information_obj = VerifiedUserInformationRepository.find_user_by_email(email)
+            if not verified_user_information_obj:
+                logger.error(f"No user found with email: {email}")
+                return False
+
+            # Verify OTP
+            if verified_user_information_obj.otp != otp:
+                logger.error(f"Invalid OTP for email: {email}")
+                return False
+
+            # Mark email as verified
+            verified_user_information_obj.is_email_verified = True
+            verified_user_information_obj.save()
+
+            logger.info(f"Successfully verified email: {email}")
+            return True
+
+        except ValueError as ve:
+            logger.error(f"Validation error in verify_otp: {str(ve)}")
+            raise
+        except Exception as e:
+            logger.exception(f"Error verifying OTP for email {email}: {str(e)}")
+            raise Exception(f"Failed to verify OTP: {str(e)}")

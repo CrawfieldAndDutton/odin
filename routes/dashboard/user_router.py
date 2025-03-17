@@ -1,6 +1,6 @@
 # Standard library imports
 from typing import Any
-import json
+
 # Third-party library imports
 from fastapi import APIRouter, Depends, status, security, HTTPException
 
@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, status, security, HTTPException
 from dto.user_dto import (
     Token,
     TokenRefresh,
+    ContactUsLead,
     User,
     UserCreate,
     UserUpdate,
@@ -88,7 +89,17 @@ def register(user_data: UserCreate) -> User:
     Returns:
         User: Details of the newly registered user.
     """
-    return AuthHandler.register_new_user(user_data)
+    try:
+        return AuthHandler.register_new_user(user_data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.exception(f"Error registering new user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to register new user: {str(e)}"
+        )
+
 
 # User Routes
 
@@ -248,13 +259,14 @@ def get_ledger_history(
     """
     try:
         result, total_transactions = UserLedgerTransactionHandler().get_user_ledger_transactions(
-            str(current_user.id), page
+            str(current_user.id),
+            page
         )
         return APISuccessResponse(
             http_status_code=status.HTTP_200_OK,
             message="Successfully retrieved ledger history",
             result={
-                "ledger_transactions": json.loads(json.dumps([obj.to_mongo() for obj in result])),
+                "ledger_transactions": result,
                 "total_transactions": total_transactions
             }
         )
@@ -269,45 +281,141 @@ def get_ledger_history(
 
 @auth_router.post("/auth/send_otp", response_model=UserVerifyResponse, tags=["Auth"])
 def send_otp(user: UserOTPCreate):
-    try:
-        # Log the request data for debugging
-        logger.info(
-            f"Received request with email: {user.email}, phone_number: {user.phone_number}"
-        )
+    """
+    Send OTP (One-Time Password) to the user's email address for verification.
 
+    Args:
+        user (UserOTPCreate): User data containing email and phone number
+                             Example: {"email": "user@example.com", "phone_number": "+1234567890"}
+
+    Returns:
+        UserVerifyResponse: Response containing email, verification status, and phone number
+                          Example: {
+                              "email": "user@example.com",
+                              "is_email_verified": false,
+                              "phone_number": "+1234567890"
+                          }
+
+    Raises:
+        HTTPException:
+            - 500: If there's an error sending the OTP
+            - 400: If the email or phone number is invalid
+    """
+    logger.info(
+        f"Received request with email: {user.email}, phone_number: {user.phone_number}"
+    )
+    try:
         AuthHandler.send_otp(user.email, user.phone_number)
-        return {
+        response_body = {
             "email": user.email,
             "is_email_verified": False,
             "phone_number": user.phone_number
         }
+        logger.info(f"Response body: {response_body}")
+        return response_body
+    except HTTPException as e:
+        raise e
     except Exception as e:
         # Log the error for debugging
-        logger.error(f"Error sending OTP: {str(e)}")
+        logger.exception(f"Error sending OTP: {str(e)}")
         # Handle any exceptions that may occur
         raise HTTPException(
-            status_code=500, detail=f"Failed to send OTP: {str(e)}"
-            )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to send OTP: {str(e)}"
+        )
 
 
 @auth_router.post("/auth/verify_otp", response_model=UserVerifyResponse, tags=["Auth"])
 def verify_otp(user: UserVerifyRequest):
+    """
+    Verify the OTP (One-Time Password) sent to the user's email.
+
+    Args:
+        user (UserVerifyRequest): User data containing email and OTP
+                                Example: {"email": "user@example.com", "otp": "123456"}
+
+    Returns:
+        UserVerifyResponse: Response containing email and verification status
+                          Example: {
+                              "email": "user@example.com",
+                              "is_email_verified": true
+                          }
+
+    Raises:
+        HTTPException:
+            - 400: If the OTP is invalid
+            - 500: If there's an error verifying the OTP
+    """
+    logger.info(f"Received request with email: {user.email}, otp: {user.otp}")
     try:
         is_email_verified = AuthHandler.verify_otp(user.email, user.otp)
         if not is_email_verified:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
 
-        # Get the user to include phone_number in response
-        from repositories.user_repository import UserRepository
-        user_data = UserRepository.find_user_by_email(user.email)
-
-        return {
+        response_body = {
             "email": user.email,
             "is_email_verified": True,
-            "phone_number": user_data.phone_number
         }
+        logger.info(f"Response body: {response_body}")
+        return response_body
     except Exception as e:
+        logger.exception(f"Error verifying OTP: {str(e)}")
         # Handle any exceptions that may occur
         raise HTTPException(
-            status_code=500, detail=f"Failed to verify OTP: {str(e)}"
-            )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to verify OTP: {str(e)}"
+        )
+
+
+@auth_router.post("/contact-us/capture", response_model=APISuccessResponse, tags=["Dashboard"])
+def capture_contact_us_lead(lead_data: ContactUsLead):
+    """
+    Capture and process a contact form submission from potential leads.
+
+    Args:
+        lead_data (ContactUsLead): Contact form data containing name, email, company, phone, and message
+                                  Example: {
+                                      "name": "John Doe",
+                                      "email": "john@company.com",
+                                      "company": "Company Inc",
+                                      "phone": "+1234567890",
+                                      "message": "Interested in your services"
+                                  }
+
+    Returns:
+        APISuccessResponse: Response containing success status and result
+                          Example: {
+                              "http_status_code": 200,
+                              "message": "Successfully captured contact us lead",
+                              "result": true
+                          }
+
+    Raises:
+        HTTPException:
+            - 500: If there's an error processing the contact form
+            - 400: If required fields are missing or invalid
+    """
+    try:
+        result = DashboardHandler().capture_contact_us_lead(
+            name=lead_data.name,
+            lead_email=lead_data.email,
+            company=lead_data.company,
+            phone=lead_data.phone,
+            message=lead_data.message
+        )
+        return APISuccessResponse(
+            http_status_code=status.HTTP_200_OK,
+            message="Successfully captured contact us lead",
+            result=result
+        )
+    except ValueError as ve:
+        logger.error(f"Validation error in contact form: {str(ve)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve)
+        )
+
+    except Exception as e:
+        logger.exception("Error capturing contact us lead")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to capture contact us lead {str(e)}"
+        )

@@ -2,7 +2,6 @@
 from typing import Optional
 
 # Third-party library imports
-from mongoengine.queryset.visitor import Q
 from mongoengine.errors import DoesNotExist
 
 # Local application imports
@@ -14,7 +13,6 @@ from dto.user_dto import UserCreate, UserUpdate
 
 from models.user_model import User as UserModel
 from models.user_ledger_transaction_model import UserLedgerTransaction
-from models.user_model import VerifiedUserInformation
 
 
 class UserRepository:
@@ -40,6 +38,12 @@ class UserRepository:
     def get_user_by_phone_number(phone_number: str) -> Optional[UserModel]:
         """
         Get a user by phone number.
+
+        Args:
+            phone_number: The phone number to search for
+
+        Returns:
+            UserModel or None: The user if found, None otherwise
         """
         try:
             return UserModel.objects.get(phone_number=phone_number)
@@ -194,7 +198,16 @@ class UserRepository:
 
     @staticmethod
     def update_user_credits(user_id: str, latest_txn: UserLedgerTransaction) -> UserModel:
-        """Update user credits based on the latest ledger transaction balance."""
+        """
+        Update user credits based on the latest ledger transaction balance.
+
+        Args:
+            user_id: The user ID to update
+            latest_txn: The latest ledger transaction
+
+        Returns:
+            UserModel: The updated user
+        """
         try:
             user = UserModel.objects.get(id=user_id)
             user.credits = latest_txn.balance
@@ -205,32 +218,3 @@ class UserRepository:
         except Exception as e:
             logger.exception(f"Error updating user credits for user {user_id}: {str(e)}")
             raise
-
-    @staticmethod
-    def create_user_otp(email: str, phone_number: str, otp: str):
-        # Check if user already exists
-        existing_user = VerifiedUserInformation.objects.filter(Q(email=email) | Q(phone_number=phone_number)).first()
-        if existing_user:
-            # Update the OTP and phone_number for existing user
-            existing_user.otp = otp
-            existing_user.phone_number = phone_number  # Update phone_number number
-            existing_user.is_email_verified = False  # Reset verification status
-            existing_user.save()
-            return existing_user
-        else:
-            # Create new user if doesn't exist
-            user = VerifiedUserInformation(email=email, phone_number=phone_number, otp=otp)
-            user.save()
-            return user
-
-    @staticmethod
-    def find_user_by_email(email: str):
-        return VerifiedUserInformation.objects(email=email).first()
-
-    @staticmethod
-    def verify_user(email: str, otp: str):
-        user = VerifiedUserInformation.objects(email=email, otp=otp).first()
-        if user:
-            user.is_email_verified = True
-            user.save()
-        return user

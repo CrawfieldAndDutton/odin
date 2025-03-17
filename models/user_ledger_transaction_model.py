@@ -39,8 +39,7 @@ class UserLedgerTransaction(Document):
         'collection': 'user_ledger_transactions',
         'indexes': [
             'user_id',
-            'type',
-            'created_at'
+            'type'
         ],
         'ordering': ['-created_at'],
         "db_alias": "kyc_fabric_db"

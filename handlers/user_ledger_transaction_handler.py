@@ -1,9 +1,11 @@
 # Standard library imports
-from typing import Optional, List
+from typing import Optional, List, Dict
+from dateutil import tz
 
 # Local application imports
 from dependencies.configuration import ServicePricing, UserLedgerTransactionType
 from dependencies.logger import logger
+from dependencies.constants import IST
 
 from models.user_ledger_transaction_model import UserLedgerTransaction
 
@@ -46,7 +48,7 @@ class UserLedgerTransactionHandler:
             logger.exception(f"Error checking eligibility for user {user_id}: {str(e)}")
             return False
 
-    def deduct_credits(self, user_id: str, service_name: str) -> Optional[UserLedgerTransaction]:
+    def deduct_credits(self, user_id: str, service_name: str, description: str) -> Optional[UserLedgerTransaction]:
         """
         Deduct credits for a service.
 
@@ -70,7 +72,7 @@ class UserLedgerTransactionHandler:
                 user_id=user_id,
                 type=service_name,
                 amount=-amount,
-                description=f"Credit deduction for {service_name}"
+                description=description
             )
 
             return new_txn
@@ -97,7 +99,7 @@ class UserLedgerTransactionHandler:
             "Credits Purchased"
         )
 
-    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[UserLedgerTransaction], int]:
+    def get_user_ledger_transactions(self, user_id: str, page: int = 1) -> tuple[List[Dict], int]:
         """
         Get all ledger transactions for a user in a paginated manner.
 
@@ -106,7 +108,7 @@ class UserLedgerTransactionHandler:
             page: The page number to get
 
         Returns:
-            Tuple[List[UserLedgerTransaction], int]: The list of ledger transactions and the
+            tuple[List[Dict], int]: The list of ledger transactions as dictionaries and the
             total number of transactions
         """
         if page < 1:
@@ -125,4 +127,13 @@ class UserLedgerTransactionHandler:
         end_idx = min(offset + limit, total_transactions)
         paginated_transactions = all_transactions[start_idx:end_idx] if start_idx < total_transactions else []
 
-        return paginated_transactions, total_transactions
+        # Convert transactions to dictionaries
+        transaction_dicts = []
+        for txn in paginated_transactions:
+            event_dict = txn.to_mongo()
+            event_dict.pop('_id', None)  # Remove MongoDB _id field
+            event_dict.pop('updated_at', None)
+            event_dict["created_at"] = event_dict["created_at"].replace(tzinfo=tz.gettz('UTC')).astimezone(IST)
+            transaction_dicts.append(event_dict)
+
+        return transaction_dicts, total_transactions

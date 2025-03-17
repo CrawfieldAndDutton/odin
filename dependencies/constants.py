@@ -1,6 +1,7 @@
 from pytz import timezone
-from dependencies.configuration import AppConfiguration
 from datetime import datetime, timedelta
+
+from dependencies.configuration import AppConfiguration
 
 # Define IST timezone
 IST = timezone('Asia/Kolkata')

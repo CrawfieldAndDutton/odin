@@ -75,7 +75,7 @@ class AadhaarHandler:
 
         if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_AADHAAR.value):
             self.user_ledger_transaction_handler.deduct_credits(
-                user_id, UserLedgerTransactionType.KYC_AADHAAR.value)
+                user_id, UserLedgerTransactionType.KYC_AADHAAR.value, f"{transaction.status}|{aadhaar}")
 
         return aadhaar_verification_response, transaction.http_status_code
 
