@@ -73,7 +73,8 @@ class RCHandler:
             rc_verification_response = self.__get_rc_kyc_details_from_api(reg_no, transaction)
 
         if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_RC.value):
-            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_RC.value)
+            self.user_ledger_transaction_handler.deduct_credits(
+                user_id, UserLedgerTransactionType.KYC_RC.value, f"{transaction.status}|{reg_no}")
 
         return rc_verification_response, transaction.http_status_code
 

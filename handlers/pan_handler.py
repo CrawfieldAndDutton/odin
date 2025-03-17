@@ -75,7 +75,7 @@ class PanHandler:
 
         if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_PAN.value):
             self.user_ledger_transaction_handler.deduct_credits(
-                user_id, UserLedgerTransactionType.KYC_PAN.value)
+                user_id, UserLedgerTransactionType.KYC_PAN.value, f"{transaction.status}|{pan}")
 
         return pan_verification_response, transaction.http_status_code
 

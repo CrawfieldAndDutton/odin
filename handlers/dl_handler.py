@@ -75,7 +75,8 @@ class DLHandler:
                 dl_no, dob, transaction)
 
         if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_DL.value):
-            self.user_ledger_transaction_handler.deduct_credits(user_id, UserLedgerTransactionType.KYC_DL.value)
+            self.user_ledger_transaction_handler.deduct_credits(
+                user_id, UserLedgerTransactionType.KYC_DL.value, f"{transaction.status}|{dl_no}")
 
         return dl_verification_response, transaction.http_status_code
 
