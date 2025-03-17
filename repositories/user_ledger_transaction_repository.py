@@ -1,6 +1,6 @@
 # Standard library imports
 from typing import Dict, List
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 # Local application imports
 from dependencies.logger import logger
@@ -54,7 +54,7 @@ class UserLedgerTransactionRepository:
     def get_service_usage_count(self, user_id: str) -> Dict[str, int]:
         """Get count of transactions by service type for a user in the last 30 days."""
         try:
-            thirty_days_ago = datetime.now(UTC) - timedelta(days=30)
+            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
             transactions = UserLedgerTransaction.objects(
                 user_id=user_id,
                 created_at__gte=thirty_days_ago
@@ -71,7 +71,7 @@ class UserLedgerTransactionRepository:
     def get_weekly_service_stats(self, user_id: str, service_name: str) -> List[Dict]:
         """Get weekly statistics for a specific service."""
         try:
-            week_ago = datetime.now(UTC) - timedelta(days=7)
+            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
             # Get all transactions for the service in the last week
             transactions = UserLedgerTransaction.objects(
