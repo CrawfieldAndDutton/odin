@@ -33,7 +33,8 @@ class User(Document):
         'collection': 'users',
         'indexes': [
             'email',
-            'username'
+            'username',
+            'phone_number'
         ],
         "db_alias": AppConfiguration.MAIN_DB
     }
