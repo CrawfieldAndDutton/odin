@@ -13,7 +13,7 @@ from mongoengine import (
 
 # Local application imports
 from dependencies.constants import IST
-
+from dependencies.configuration import AppConfiguration
 
 class APIClient(Document):
     user_id = StringField(required=True)
@@ -32,7 +32,7 @@ class APIClient(Document):
             'is_enabled',
             'credits'
         ],
-        "db_alias": "kyc_fabric_db"
+        "db_alias": AppConfiguration.MAIN_DB
     }
 
     def save(self, *args, **kwargs):

@@ -13,7 +13,7 @@ from mongoengine import (
 
 # Local application imports
 from dependencies.constants import IST
-
+from dependencies.configuration import AppConfiguration
 
 class User(Document):
     email = EmailField(required=True, unique=True)
@@ -34,7 +34,7 @@ class User(Document):
             'email',
             'username'
         ],
-        "db_alias": "kyc_fabric_db"
+        "db_alias": AppConfiguration.MAIN_DB
     }
 
     def save(self, *args, **kwargs):
@@ -55,7 +55,7 @@ class RefreshToken(Document):
             'user_id',
             'expires_at'
         ],
-        "db_alias": "kyc_fabric_db"
+        "db_alias": AppConfiguration.MAIN_DB
     }
 
 
@@ -74,5 +74,5 @@ class VerifiedUserInformation(Document):
             'email',
             'otp'
         ],
-        "db_alias": "kyc_fabric_db"
+        "db_alias": AppConfiguration.MAIN_DB
     }
