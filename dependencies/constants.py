@@ -6,37 +6,39 @@ from dependencies.configuration import AppConfiguration
 # Define IST timezone
 IST = timezone('Asia/Kolkata')
 
+CONTENT_TYPE = "application/json"
+
 PAN_HEADERS = {
-    "Content-Type": "application/json",
+    "Content-Type": CONTENT_TYPE,
     "x-rapidapi-host": "aitan-pan-verification-apis.p.rapidapi.com",
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
 
 VEHICLE_HEADERS = {
-    "Content-Type": "application/json",
+    "Content-Type": CONTENT_TYPE,
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
 
 VOTER_HEADERS = {
-    "Content-Type": "application/json",
+    "Content-Type": CONTENT_TYPE,
     "x-rapidapi-host": "voter-id-verification-api.p.rapidapi.com",
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
 
 DL_HEADERS = {
-    "Content-Type": "application/json",
+    "Content-Type": CONTENT_TYPE,
     "x-rapidapi-host": "dl-verification-api1.p.rapidapi.com",
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
 
 PASSPORT_HEADERS = {
-    "Content-Type": "application/json",
+    "Content-Type": CONTENT_TYPE,
     "x-rapidapi-host": "passport-verification-api1.p.rapidapi.com",
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
 
 AADHAAR_HEADERS = {
-    "Content-Type": "application/json",
+    "Content-Type": CONTENT_TYPE,
     "x-rapidapi-host": "aadhaar-to-pan-api.p.rapidapi.com",
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
