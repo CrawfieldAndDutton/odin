@@ -15,6 +15,7 @@ from mongoengine import (
 from dependencies.constants import IST
 from dependencies.configuration import AppConfiguration
 
+
 class APIClient(Document):
     user_id = StringField(required=True)
     client_id = StringField(required=True, unique=True)

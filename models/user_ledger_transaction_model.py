@@ -32,9 +32,8 @@ class UserLedgerTransaction(Document):
     amount = FloatField(required=True)
     description = StringField(required=True)
     balance = FloatField(required=True)
-    created_at = DateTimeField(default=datetime.now(IST))
-    updated_at = DateTimeField(default=datetime.now(IST))
-    description = StringField()
+    created_at = DateTimeField(default=lambda: datetime.now(IST))
+    updated_at = DateTimeField(default=lambda: datetime.now(IST))
 
     meta = {
         'collection': 'user_ledger_transactions',

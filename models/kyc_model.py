@@ -16,6 +16,7 @@ from mongoengine import (
 from dependencies.constants import IST
 from dependencies.configuration import AppConfiguration
 
+
 class KYCValidationTransaction(Document):
 
     # API and Provider Details

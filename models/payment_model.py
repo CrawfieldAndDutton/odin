@@ -14,6 +14,7 @@ from mongoengine import (
 from dependencies.constants import IST
 from dependencies.configuration import AppConfiguration
 
+
 class PaymentTransaction(Document):
     """
     Combined model for storing all payment-related information in a single document.

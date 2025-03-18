@@ -15,6 +15,7 @@ from mongoengine import (
 from dependencies.constants import IST
 from dependencies.configuration import AppConfiguration
 
+
 class User(Document):
     email = EmailField(required=True, unique=True)
     username = StringField(required=True, unique=True)

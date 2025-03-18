@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from mongoengine import connect
-
+from mangum import Mangum
 # Local application imports
 from dependencies.configuration import AppConfiguration
 from dependencies.middleware_log import log_middleware
@@ -47,6 +47,8 @@ app.include_router(auth_router)
 app.include_router(api_kyc_router)
 app.include_router(dashboard_kyc_router)
 app.include_router(payment_router)
+
+handler = Mangum(app)
 
 if __name__ == "__main__":
     import uvicorn
