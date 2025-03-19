@@ -5,6 +5,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, status, security, HTTPException
 
 # Local application imports
+from dependencies.exceptions import UserNotFoundException
+from dependencies.logger import logger
+
 from dto.user_dto import (
     Token,
     TokenRefresh,
@@ -15,14 +18,14 @@ from dto.user_dto import (
     RefreshTokenRequest,
     UserOTPCreate,
     UserVerifyResponse,
-    UserVerifyRequest
+    UserVerifyRequest,
+    PasswordResetRequest
 )
 from dto.common_dto import APISuccessResponse
 
 from handlers.auth_handlers import AuthHandler
 from handlers.dashboard_handler import DashboardHandler
 from handlers.user_ledger_transaction_handler import UserLedgerTransactionHandler
-from dependencies.logger import logger
 
 from models.user_model import User as UserModel
 
@@ -453,3 +456,58 @@ def capture_contact_us_lead(lead_data: ContactUsLead):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to capture contact us lead {str(e)}"
         )
+
+
+@auth_router.get("/account/reset/link", response_model=APISuccessResponse, tags=["Dashboard"])
+def get_password_reset(email: str) -> APISuccessResponse:
+    """
+    Get the password reset link for the user.
+
+    Args:
+        email: Email ID of the user.
+
+    Returns:
+        APISuccessResponse: Response containing success status and result
+    """
+    try:
+        AuthHandler().get_password_reset_link(email)
+        return APISuccessResponse(
+            http_status_code=status.HTTP_200_OK,
+            message="Successfully got password reset link",
+            result={"message": "Password reset link sent to email"}
+        )
+    except UserNotFoundException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    except Exception:
+        logger.exception(f"Error getting password reset link for email {email}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get password reset link"
+        )
+
+
+@auth_router.post("/account/password/reset", response_model=APISuccessResponse, tags=["Dashboard"])
+def reset_password(request: PasswordResetRequest) -> APISuccessResponse:
+    """
+    Reset the user's password.
+
+    Args:
+        request: Password reset request containing email and password
+
+    Returns:
+        APISuccessResponse: Response containing success status and result
+    """
+    result = AuthHandler().reset_password(request.email, request.password)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to reset password. Please try again."
+        )
+    return APISuccessResponse(
+        http_status_code=status.HTTP_200_OK,
+        message="Successfully reset password",
+        result=result
+    )
