@@ -619,6 +619,7 @@ class AuthHandler:
             f"{random.randint(1, 99)}|"
             f"{datetime.today().day}|"
             f"{str(user.id)}|"
+            f"{str(user.email)}|"
             f"{random.randint(100, 999)}"
         )
         reset_url = (
