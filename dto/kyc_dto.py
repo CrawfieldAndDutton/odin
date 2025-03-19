@@ -44,8 +44,3 @@ class PassportVerificationRequest(BaseModel):
 
 class AadhaarVerificationRequest(BaseModel):
     aadhaar: str = Field(..., description="Aadhaar Number to validate")
-
-
-class PasswordResetRequest(BaseModel):
-    email: str = Field(..., description="Email to reset password")
-    password: str = Field(..., description="New password to set")

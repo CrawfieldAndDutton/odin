@@ -623,8 +623,8 @@ class AuthHandler:
         )
         reset_url = (
             f"{AppConfiguration.FRONTEND_BASE_URL}/"
-            "reset-password?"
-            f"email={email}&proc_key={base64.b64encode(proc_key.encode('utf-8')).decode('utf-8')}"
+            "#/reset-password?"
+            f"proc_key={base64.b64encode(proc_key.encode('utf-8')).decode('utf-8')}"
         )
         logger.info(f"Password reset link: {reset_url}")
 
