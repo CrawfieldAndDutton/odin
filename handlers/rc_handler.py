@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Tuple
+from typing import Tuple, Optional
 import time
 
 # Local application imports
@@ -36,7 +36,7 @@ class RCHandler:
             dict: RC verification details
         """
         # Check if user has sufficient credits
-        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_RC_COST:
+        if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.KYC_RC_COST:
             logger.error(f"User {user_id} has insufficient credits to verify RC {reg_no}")
             raise InsufficientCreditsException()
 
@@ -78,7 +78,7 @@ class RCHandler:
 
         return rc_verification_response, transaction.http_status_code
 
-    def __get_rc_kyc_details_from_db(self, reg_no: str) -> dict:
+    def __get_rc_kyc_details_from_db(self, reg_no: str) -> Optional[KYCValidationTransaction]:
         """
         Get RC details from database cache.
 
@@ -86,7 +86,7 @@ class RCHandler:
             reg_no: registration number to verify
 
         Returns:
-            dict: Cached RC details or None if not found
+            Optional[KYCValidationTransaction]: Cached RC details or None if not found
         """
         try:
             transaction = self.kyc_repository.get_kyc_validation_transaction(

@@ -44,13 +44,9 @@ class PaymentTransaction(Document):
     meta = {
         'collection': 'payment_transactions',
         'indexes': [
-            'user_id',
             'order_id',
             'payment_id',
-            'razorpay_payment_link_id',
-            'order_status',
-            'payment_status',
-            'created_at'
+            'razorpay_payment_link_id'
         ],
         'ordering': ['-created_at'],
         "db_alias": AppConfiguration.MAIN_DB

@@ -39,9 +39,7 @@ class KYCValidationTransaction(Document):
         "collection": "kyc_validation_transactions",
         "indexes": [
             "api_name",
-            "provider_name",
-            "user_id",
-            "created_at",
+            "status"
         ],
         'ordering': ['-created_at'],
         "db_alias": AppConfiguration.MAIN_DB

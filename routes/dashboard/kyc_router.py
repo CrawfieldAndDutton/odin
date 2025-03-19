@@ -96,6 +96,15 @@ def verify_vehicle(
             reg_no=request.reg_no, user_id=str(user.id)
         )
         logger.info(f"RC Verification Response: {rc_verification_response}")
+        if http_status_code == status.HTTP_206_PARTIAL_CONTENT:
+            return JSONResponse(
+                status_code=http_status_code,
+                content={
+                    "http_status_code": http_status_code,
+                    "message": "RC Verification Successful",
+                    "result": rc_verification_response.get('message')
+                }
+            )
 
         if http_status_code != status.HTTP_200_OK:
             return JSONResponse(

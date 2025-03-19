@@ -1,10 +1,8 @@
 from typing import Dict, List
-from datetime import datetime
 
 from repositories.user_ledger_transaction_repository import UserLedgerTransactionRepository
 from repositories.user_repository import UserRepository
 
-from dependencies.constants import IST
 from dependencies.logger import logger
 
 from services.email_service import EmailService
@@ -71,6 +69,31 @@ class DashboardHandler:
             )
             raise e
 
+    def get_user_monthly_statistics(self, user_id: str) -> Dict:
+        """
+        Get monthly statistics for a specific user.
+
+        Args:
+            user_id: ID of the user.
+
+        Returns:
+            Dict: Monthly statistics for the user.
+        """
+        try:
+            # Call the repository to fetch data
+            result = self.transaction_repository.get_monthly_service_stats(user_id)
+
+            # Check if the result is empty
+            if not result:
+                logger.warning(f"No monthly statistics found for user {user_id}")
+                return {}
+
+            # Return the result
+            return result
+        except Exception as e:
+            logger.error(f"Error getting monthly statistics for user {user_id}: {str(e)}")
+            raise
+
     def capture_contact_us_lead(self, name: str, lead_email: str, company: str, phone: str, message: str) -> bool:
         """
         Capture and process a contact us form submission.
@@ -95,18 +118,8 @@ class DashboardHandler:
                 logger.error("Missing required fields in contact us form")
                 raise ValueError("All fields are required")
 
-            # Process the lead (existing code here)
-            lead_data = {
-                "name": name,
-                "email": lead_email,
-                "company": company,
-                "phone": phone,
-                "message": message,
-                "created_at": datetime.now(IST)
-            }
-
             # Send notification email
-            EmailService.send_contact_us_notification(lead_data)
+            EmailService.send_contact_us_lead_email(name, lead_email, company, phone, message)
 
             logger.info(f"Successfully captured contact us lead for {lead_email}")
             return True

@@ -14,7 +14,13 @@ from mongoengine.errors import DoesNotExist
 from dependencies.logger import logger
 from dependencies.configuration import AppConfiguration
 from dependencies.password_utils import PasswordUtils
-from dependencies.exceptions import CredentialsException, UserNotFoundException, UserAlreadyExistsException
+from dependencies.exceptions import (
+    CredentialsException,
+    UserNotFoundException,
+    UserAlreadyExistsException,
+    OTPVerificationError,
+    INVALID_REFRESH_TOKEN_MSG
+)
 from dependencies.constants import IST
 
 from dto.user_dto import TokenPayload, UserCreate, UserUpdate, Token, TokenRefresh, User, RefreshTokenRequest
@@ -298,10 +304,10 @@ class AuthHandler:
         """
         user_id = AuthHandler.verify_refresh_token(token_data.refresh_token)
         if not user_id:
-            logger.exception("Invalid refresh token")
+            logger.exception(INVALID_REFRESH_TOKEN_MSG)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token",
+                detail=INVALID_REFRESH_TOKEN_MSG,
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
@@ -550,7 +556,7 @@ class AuthHandler:
             verified_user_information_obj.is_email_verified = False
             verified_user_information_obj.save()
         else:
-            verified_user_information_obj = verified_user_information_repository.create_verified_user_information(
+            verified_user_information_repository.create_verified_user_information(
                 email, phone_number, otp
             )
 
@@ -607,4 +613,4 @@ class AuthHandler:
             raise
         except Exception as e:
             logger.exception(f"Error verifying OTP for email {email}: {str(e)}")
-            raise Exception(f"Failed to verify OTP: {str(e)}")
+            raise OTPVerificationError(f"Failed to verify OTP: {str(e)}")

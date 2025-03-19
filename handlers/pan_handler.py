@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Tuple
+from typing import Tuple, Optional
 import time
 
 # Local application imports
@@ -36,7 +36,7 @@ class PanHandler:
             dict: PAN verification details
         """
         # Check if user has sufficient credits
-        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_PAN_COST:
+        if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.KYC_PAN_COST:
             logger.error(f"User {user_id} has insufficient credits to verify PAN {pan}")
             raise InsufficientCreditsException()
 
@@ -79,7 +79,7 @@ class PanHandler:
 
         return pan_verification_response, transaction.http_status_code
 
-    def __get_pan_kyc_details_from_db(self, pan: str) -> dict:
+    def __get_pan_kyc_details_from_db(self, pan: str) -> Optional[KYCValidationTransaction]:
         """
         Get PAN details from database cache.
 
@@ -87,7 +87,7 @@ class PanHandler:
             pan: PAN number to verify
 
         Returns:
-            dict: Cached PAN details or None if not found
+            Optional[KYCValidationTransaction]: Cached PAN details or None if not found
         """
         try:
             transaction = self.kyc_repository.get_kyc_validation_transaction(

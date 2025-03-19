@@ -39,7 +39,8 @@ class UserLedgerTransaction(Document):
         'collection': 'user_ledger_transactions',
         'indexes': [
             'user_id',
-            'type'
+            'type',
+            'created_at'
         ],
         'ordering': ['-created_at'],
         "db_alias": AppConfiguration.MAIN_DB

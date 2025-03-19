@@ -617,7 +617,7 @@ class PaymentHandler:
         logger.info(f"Full webhook event data: {request.dict()}")
 
         # Extract entities from webhook data
-        event, payment_entity, order_entity, payment_link_entity = PaymentHandler._extract_webhook_entities(
+        event, payment_entity, _, payment_link_entity = PaymentHandler._extract_webhook_entities(
             request.dict()
         )
 

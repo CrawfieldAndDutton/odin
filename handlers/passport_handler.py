@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Tuple
+from typing import Tuple, Optional
 import time
 
 # Local application imports
@@ -38,7 +38,7 @@ class PassportHandler:
             dict: PASSPORT verification details
         """
         # Check if user has sufficient credits
-        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_PASSPORT_COST:
+        if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.KYC_PASSPORT_COST:
             logger.error(f"User {user_id} has insufficient credits to verify PASSPORT {file_number}")
             raise InsufficientCreditsException()
 
@@ -81,7 +81,7 @@ class PassportHandler:
 
         return passport_verification_response, transaction.http_status_code
 
-    def __get_passport_kyc_details_from_db(self, file_number: str) -> dict:
+    def __get_passport_kyc_details_from_db(self, file_number: str) -> Optional[KYCValidationTransaction]:
         """
         Get PASSPORT details from database cache.
 
@@ -89,7 +89,7 @@ class PassportHandler:
             file_number: PASSPORT number to verify
 
         Returns:
-            dict: Cached PASSPORT details or None if not found
+            Optional[KYCValidationTransaction]: Cached PASSPORT details or None if not found
         """
         try:
             transaction = self.kyc_repository.get_kyc_validation_transaction(

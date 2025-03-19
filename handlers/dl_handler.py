@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Tuple
+from typing import Tuple, Optional
 import time
 
 # Local application imports
@@ -37,7 +37,7 @@ class DLHandler:
             dict: DL verification details
         """
         # Check if user has sufficient credits
-        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_DL_COST:
+        if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.KYC_DL_COST:
             logger.error(f"User {user_id} has insufficient credits to verify DL {dl_no}")
             raise InsufficientCreditsException()
 
@@ -80,7 +80,7 @@ class DLHandler:
 
         return dl_verification_response, transaction.http_status_code
 
-    def __get_dl_kyc_details_from_db(self, dl_no: str) -> dict:
+    def __get_dl_kyc_details_from_db(self, dl_no: str) -> Optional[KYCValidationTransaction]:
         """
         Get DL details from database cache.
 
@@ -88,7 +88,7 @@ class DLHandler:
             dl_no: DL number to verify.
 
         Returns:
-            dict: Cached DL details or None if not found
+            Optional[KYCValidationTransaction]: Cached DL details or None if not found
         """
         try:
             transaction = self.kyc_repository.get_kyc_validation_transaction(

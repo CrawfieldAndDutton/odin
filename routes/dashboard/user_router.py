@@ -239,6 +239,40 @@ def get_weekly_stats(
         )
 
 
+@auth_router.get("/monthly-stats/fetch", response_model=APISuccessResponse, tags=["Dashboard"])
+def get_monthly_stats(
+    current_user: UserModel = Depends(AuthHandler.get_current_active_user)
+) -> APISuccessResponse:
+    """
+    Get monthly statistics for a specific service used by the user.
+
+    Args:
+        service_name: Name of the service to get statistics for.
+                     Example: "KYC_PAN", "KYC_AADHAAR"
+        current_user: Authenticated user.
+
+    Returns:
+        APISuccessResponse: Response containing monthly statistics.
+
+    Raises:
+        HTTPException: If there's an error fetching monthly statistics.
+    """
+    try:
+        result = DashboardHandler().get_user_monthly_statistics(str(current_user.id))
+        return APISuccessResponse(
+            http_status_code=status.HTTP_200_OK,
+            message="Successfully retrieved credits usage summary",
+            result=result
+        )
+    except Exception:
+        logger.exception(f"Error fetching monthly statistics for user {current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch monthly statistics",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+
 @auth_router.get("/ledger-history/fetch", response_model=APISuccessResponse, tags=["Dashboard"])
 def get_ledger_history(
     page: int = 1,
@@ -396,7 +430,7 @@ def capture_contact_us_lead(lead_data: ContactUsLead):
     try:
         result = DashboardHandler().capture_contact_us_lead(
             name=lead_data.name,
-            lead_email=lead_data.email,
+            lead_email=lead_data.lead_email,
             company=lead_data.company,
             phone=lead_data.phone,
             message=lead_data.message

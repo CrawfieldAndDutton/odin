@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Tuple
+from typing import Tuple, Optional
 import time
 
 # Local application imports
@@ -36,7 +36,7 @@ class AadhaarHandler:
             dict: Aadhaar verification details
         """
         # Check if user has sufficient credits
-        if not self.user_repository.get_user_by_id(user_id).credits >= ServicePricing.KYC_AADHAAR_COST:
+        if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.KYC_AADHAAR_COST:
             logger.error(f"User {user_id} has insufficient credits to verify Aadhaar {aadhaar}")
             raise InsufficientCreditsException()
 
@@ -79,7 +79,7 @@ class AadhaarHandler:
 
         return aadhaar_verification_response, transaction.http_status_code
 
-    def __get_aadhaar_kyc_details_from_db(self, aadhaar: str) -> dict:
+    def __get_aadhaar_kyc_details_from_db(self, aadhaar: str) -> Optional[KYCValidationTransaction]:
         """
         Get Aadhaar details from database cache.
 
@@ -87,7 +87,7 @@ class AadhaarHandler:
             aadhaar: Aadhaar number to verify
 
         Returns:
-            dict: Cached Aadhaar details or None if not found
+            Optional[KYCValidationTransaction]: Cached Aadhaar details or None if not found
         """
         try:
             transaction = self.kyc_repository.get_kyc_validation_transaction(
