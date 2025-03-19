@@ -23,7 +23,15 @@ from dependencies.exceptions import (
 )
 from dependencies.constants import IST
 
-from dto.user_dto import TokenPayload, UserCreate, UserUpdate, Token, TokenRefresh, User, RefreshTokenRequest
+from dto.user_dto import (
+    TokenPayload,
+    UserCreate,
+    UserUpdate,
+    Token,
+    TokenRefresh,
+    User,
+    RefreshTokenRequest
+)
 
 from repositories.user_repository import UserRepository
 from repositories.api_client_repository import APIClientRepository
@@ -150,33 +158,6 @@ class AuthHandler:
         encoded_jwt = jwt.encode(to_encode, AppConfiguration.REFRESH_SECRET_KEY, algorithm=AppConfiguration.ALGORITHM)
 
         return encoded_jwt, expires_at
-
-    @staticmethod
-    def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """
-        Verify a plain password against a hashed password.
-
-        Args:
-            plain_password: The plain text password to verify.
-            hashed_password: The hashed password to compare against.
-
-        Returns:
-            bool: True if the passwords match, False otherwise.
-        """
-        return PasswordUtils.verify_password(plain_password, hashed_password)
-
-    @staticmethod
-    def get_password_hash(password: str) -> str:
-        """
-        Generate a hash for a given password.
-
-        Args:
-            password: The plain text password to hash.
-
-        Returns:
-            str: The hashed password.
-        """
-        return PasswordUtils.get_password_hash(password)
 
     @staticmethod
     def verify_refresh_token(token: str) -> Optional[str]:
@@ -614,3 +595,63 @@ class AuthHandler:
         except Exception as e:
             logger.exception(f"Error verifying OTP for email {email}: {str(e)}")
             raise OTPVerificationError(f"Failed to verify OTP: {str(e)}")
+
+    @staticmethod
+    def get_password_reset_link(email: str) -> str:
+        """
+        Generate a password reset link for a user.
+
+        Args:
+            email: The email address of the user.
+
+        Returns:
+            str: The password reset link.
+        """
+        # Check if user exists
+        user = UserRepository.get_user_by_email(email)
+        if not user:
+            logger.error(f"User with email {email} not found")
+            raise UserNotFoundException()
+
+        logger.info(f"Generating password reset link for user {user.username}")
+
+        proc_key = (
+            f"{random.randint(1, 99)}|"
+            f"{datetime.today().day}|"
+            f"{str(user.id)}|"
+            f"{str(user.email)}|"
+            f"{random.randint(100, 999)}"
+        )
+        reset_url = (
+            f"{AppConfiguration.FRONTEND_BASE_URL}/"
+            "#/reset-password?"
+            f"proc_key={base64.b64encode(proc_key.encode('utf-8')).decode('utf-8')}"
+        )
+        logger.info(f"Password reset link: {reset_url}")
+
+        EmailService.send_password_reset_email(user.first_name, email, reset_url)
+
+    @staticmethod
+    def reset_password(email: str, password: str) -> bool:
+        """
+        Reset a user's password.
+
+        Args:
+            email: The email address of the user.
+            password: The new password for the user.
+
+        Returns:
+            str: The message indicating the password reset was successful.
+        """
+        try:
+            user = UserRepository.get_user_by_email(email)
+            if not user:
+                logger.error(f"User with email {email} not found")
+                raise UserNotFoundException()
+
+            user.hashed_password = PasswordUtils.get_password_hash(password)
+            user.save()
+            return True
+        except Exception as e:
+            logger.exception(f"Error resetting password for email {email}: {str(e)}")
+            return False

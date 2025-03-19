@@ -39,7 +39,7 @@ class User(UserBase):
     updated_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Token(BaseModel):
@@ -95,3 +95,8 @@ class ContactUsLead(BaseModel):
     company: str
     phone: str
     message: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(..., description="Email to reset password")
+    password: str = Field(..., description="New password to set")
