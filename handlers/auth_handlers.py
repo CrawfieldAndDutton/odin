@@ -616,15 +616,15 @@ class AuthHandler:
         logger.info(f"Generating password reset link for user {user.username}")
 
         proc_key = (
-            f"{random.randint(1, 99)}|
-            {datetime.today().day}|
-            {str(user.id)}|
-            {random.randint(100, 999)}"
+            f"{random.randint(1, 99)}|"
+            f"{datetime.today().day}|"
+            f"{str(user.id)}|"
+            f"{random.randint(100, 999)}"
         )
         reset_url = (
-            f"{AppConfiguration.FRONTEND_URL}/
-            reset-password?
-            email={email}&proc_key={base64.b64encode(proc_key.encode('utf-8')).decode('utf-8')}"
+            f"{AppConfiguration.FRONTEND_BASE_URL}/"
+            "reset-password?"
+            f"email={email}&proc_key={base64.b64encode(proc_key.encode('utf-8')).decode('utf-8')}"
         )
         logger.info(f"Password reset link: {reset_url}")
 
