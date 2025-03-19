@@ -1,12 +1,11 @@
 # Standard library imports
-from decimal import Decimal
 from typing import Dict, List
 from datetime import datetime, timedelta, timezone
 
 # Local application imports
 from dependencies.logger import logger
 from dependencies.constants import IST
-from dependencies.configuration import UserLedgerTransactionType
+
 from models.user_ledger_transaction_model import UserLedgerTransaction
 
 from repositories.user_repository import UserRepository
@@ -70,45 +69,22 @@ class UserLedgerTransactionRepository:
             logger.error(f"Error getting service usage count for user {user_id}: {str(e)}")
             return {}
 
-    def get_weekly_service_stats(self, user_id: str, service_name: str) -> List[Dict]:
-        """Get weekly statistics for a specific service."""
+    def get_weekly_service_stats(self, user_id: str, service_name: str) -> List[UserLedgerTransaction]:
+        """Get weekly transactions for a specific service."""
         try:
             week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
             # Get all transactions for the service in the last week
-            transactions = UserLedgerTransaction.objects(
+            return UserLedgerTransaction.objects(
                 user_id=user_id,
                 type=service_name,
                 created_at__gte=week_ago
             ).order_by('created_at')
-
-            # Group transactions by date
-            stats = {}
-            for txn in transactions:
-                date_key = txn.created_at.strftime("%Y-%m-%d")
-                if date_key not in stats:
-                    stats[date_key] = {
-                        "count": 0,
-                        "total_amount": 0.0
-
-                    }
-                stats[date_key]["count"] += 1
-                stats[date_key]["total_amount"] += txn.amount
-
-            # Convert to list format
-            return [
-                {
-                    "date": date,
-                    "count": data["count"],
-                    "total_amount": data["total_amount"]
-                }
-                for date, data in sorted(stats.items())
-            ]
         except Exception as e:
             logger.error(f"Error getting weekly service stats for user {user_id}: {str(e)}")
             return []
 
-    def get_monthly_service_stats(self, user_id: str) -> Dict:
+    def get_monthly_service_stats(self, user_id: str) -> List[UserLedgerTransaction]:
         """
         Get monthly transactions for a specific user.
 
@@ -116,7 +92,7 @@ class UserLedgerTransactionRepository:
             user_id: ID of the user.
 
         Returns:
-            Dict: Monthly transactions and statistics for the user.
+            List[UserLedgerTransaction]: List of transactions for the current month.
         """
         try:
             # Calculate the start and end of the current month
@@ -128,48 +104,11 @@ class UserLedgerTransactionRepository:
             logger.info(f"Fetching transactions for user {user_id} from {start_of_month} to {end_of_month}")
 
             # Query transactions for the current month
-            transactions = UserLedgerTransaction.objects(
+            return UserLedgerTransaction.objects(
                 user_id=user_id,
                 created_at__gte=start_of_month,
                 created_at__lt=end_of_month
             )
-
-            # Initialize variables for calculations
-            total_amount = Decimal(0)
-            service_wise_amount = {}
-            total_hits = 0
-            # Process each transaction
-            for transaction in transactions:
-                # Skip if type or amount is missing
-                if not transaction.type or transaction.amount is None:
-                    logger.info(f"Skipping transaction {transaction.id} (missing type or amount)")
-                    continue
-
-                service_type = transaction.type
-                credits_used = abs(Decimal(str(transaction.amount)))
-
-                # Update total monthly amount (exclude CREDIT transactions)
-                if service_type != UserLedgerTransactionType.CREDIT.value:
-                    total_amount += credits_used
-                    total_hits += 1
-
-                # Update service-wise amount spent
-                if service_type in service_wise_amount:
-                    service_wise_amount[service_type] += credits_used
-                else:
-                    service_wise_amount[service_type] = credits_used
-
-            logger.info(f"Total monthly credits used: {total_amount}")
-            logger.info(f"Service-wise credits used: {service_wise_amount}")
-            # Convert Decimal to float for JSON serialization
-            service_wise_amount = {k: float(v) for k, v in service_wise_amount.items()}
-
-            # Return the result
-            return {
-                "total_amount": float(total_amount),
-                "total_hits": total_hits,
-                "service_wise_amount": service_wise_amount,
-            }
         except Exception as e:
             logger.exception(f"Error fetching monthly transactions for user {user_id}: {str(e)}")
             raise

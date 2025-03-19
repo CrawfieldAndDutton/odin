@@ -1,9 +1,11 @@
 from typing import Dict, List
+from decimal import Decimal
 
 from repositories.user_ledger_transaction_repository import UserLedgerTransactionRepository
 from repositories.user_repository import UserRepository
 
 from dependencies.logger import logger
+from dependencies.configuration import UserLedgerTransactionType
 
 from services.email_service import EmailService
 
@@ -51,19 +53,38 @@ class DashboardHandler:
             List[Dict]: List of daily statistics containing count and total amount
         """
         try:
-            stats = self.transaction_repository.get_weekly_service_stats(
+            # Get transactions from repository
+            transactions = self.transaction_repository.get_weekly_service_stats(
                 user_id, service_name
             )
-            return [
+
+            # Group transactions by date
+            stats = {}
+            for txn in transactions:
+                date_key = txn.created_at.strftime("%Y-%m-%d")
+                if date_key not in stats:
+                    stats[date_key] = {
+                        "count": 0,
+                        "total_amount": Decimal(0)
+                    }
+                stats[date_key]["count"] += 1
+                stats[date_key]["total_amount"] += abs(Decimal(str(txn.amount)))
+
+            # Convert to list format and sort by date
+            result = [
                 {
-                    "date": stat["date"],
-                    "count": stat["count"],
-                    "total_amount": abs(stat["total_amount"])  # changes
+                    "date": date,
+                    "count": data["count"],
+                    "total_amount": float(data["total_amount"])
                 }
-                for stat in stats
+                for date, data in sorted(stats.items())
             ]
+
+            logger.info(f"Weekly statistics for user {user_id} and service {service_name}: {result}")
+            return result
+
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"Error getting weekly statistics for user {user_id} "
                 f"and service {service_name}: {str(e)}"
             )
@@ -77,19 +98,52 @@ class DashboardHandler:
             user_id: ID of the user.
 
         Returns:
-            Dict: Monthly statistics for the user.
+            Dict: Monthly statistics containing:
+                - total_amount: Total amount spent in the month
+                - total_hits: Total number of API calls in the month
+                - service_wise_breakdown: Dictionary with service-wise statistics
         """
         try:
-            # Call the repository to fetch data
-            result = self.transaction_repository.get_monthly_service_stats(user_id)
+            # Get transactions from repository
+            transactions = self.transaction_repository.get_monthly_service_stats(user_id)
 
-            # Check if the result is empty
-            if not result:
-                logger.warning(f"No monthly statistics found for user {user_id}")
-                return {}
+            # Initialize statistics
+            stats = {
+                "total_amount": Decimal(0),
+                "total_hits": 0,
+                "service_wise_breakdown": {}
+            }
 
-            # Return the result
-            return result
+            # Process each transaction
+            for txn in transactions:
+                # Skip credit transactions
+                if txn.type == UserLedgerTransactionType.CREDIT.value:
+                    continue
+
+                # Update total amount and hits
+                stats["total_amount"] += abs(Decimal(str(txn.amount)))
+                stats["total_hits"] += 1
+
+                # Update service-wise breakdown
+                service_type = txn.type
+                if service_type not in stats["service_wise_breakdown"]:
+                    stats["service_wise_breakdown"][service_type] = {
+                        "amount": Decimal(0),
+                        "hits": 0
+                    }
+                stats["service_wise_breakdown"][service_type]["amount"] += abs(Decimal(str(txn.amount)))
+                stats["service_wise_breakdown"][service_type]["hits"] += 1
+
+            # Convert Decimal to float for JSON serialization
+            stats["total_amount"] = float(stats["total_amount"])
+            for service in stats["service_wise_breakdown"]:
+                stats["service_wise_breakdown"][service]["amount"] = float(
+                    stats["service_wise_breakdown"][service]["amount"]
+                )
+
+            logger.info(f"Monthly statistics for user {user_id}: {stats}")
+            return stats
+
         except Exception as e:
             logger.error(f"Error getting monthly statistics for user {user_id}: {str(e)}")
             raise
