@@ -49,3 +49,23 @@ class EmailService:
             server.starttls()
             server.login(AppConfiguration.SMTP_USER, AppConfiguration.SMTP_PASSWORD)
             server.sendmail(AppConfiguration.SMTP_USER, [AppConfiguration.SMTP_CC_USER], msg.as_string())
+
+    @staticmethod
+    def send_password_reset_email(first_name: str, email: str, reset_url: str):
+        # Get the template
+        template = EmailService.env.get_template('password_reset.html')
+
+        # Render the template with context
+        body = template.render(first_name=first_name, reset_url=reset_url)
+
+        # Create email message
+        msg = MIMEText(body, 'html')
+        msg['Subject'] = "KYCFabric - Password Reset Request"
+        msg['From'] = AppConfiguration.SMTP_USER
+        msg['To'] = email
+
+        # Send email
+        with smtplib.SMTP(AppConfiguration.SMTP_HOST, AppConfiguration.SMTP_PORT) as server:
+            server.starttls()
+            server.login(AppConfiguration.SMTP_USER, AppConfiguration.SMTP_PASSWORD)
+            server.sendmail(AppConfiguration.SMTP_USER, [email], msg.as_string())
