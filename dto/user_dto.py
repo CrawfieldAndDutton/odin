@@ -15,6 +15,7 @@ class UserBase(BaseModel):
     role: Optional[str] = "user"
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    company: Optional[str] = None
 
 
 class UserCreate(UserBase):
