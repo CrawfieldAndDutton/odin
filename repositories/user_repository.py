@@ -100,7 +100,8 @@ class UserRepository:
             hashed_password=PasswordUtils.get_password_hash(user_data.password),
             first_name=user_data.first_name,
             last_name=user_data.last_name,
-            role=user_data.role if hasattr(user_data, 'role') else "user"
+            role=user_data.role if hasattr(user_data, 'role') else "user",
+            company=user_data.company,
         )
         user.save()
         return user
