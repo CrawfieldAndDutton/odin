@@ -25,6 +25,7 @@ class AppConfiguration:
     EXTERNAL_API_URL_DL = os.getenv("EXTERNAL_API_URL_DL")
     EXTERNAL_API_URL_PASSPORT = os.getenv("EXTERNAL_API_URL_PASSPORT")
     EXTERNAL_API_URL_AADHAAR = os.getenv("EXTERNAL_API_URL_AADHAAR")
+    EXTERNAL_API_URL_MOBILE_LOOKUP = os.getenv("EXTERNAL_API_URL_MOBILE_LOOKUP")
     MONGO_URI = os.environ["MONGO_URI"]
     MAIN_DB = os.getenv("MAIN_DB", "kyc_fabric_db")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "YOUR_SECRET_KEY_HERE")  # Change in production!
