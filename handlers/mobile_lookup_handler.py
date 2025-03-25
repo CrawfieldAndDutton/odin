@@ -24,7 +24,7 @@ class MobileLookupHandler:
         self.kyc_repository = KYCRepository()
         self.user_ledger_transaction_handler = UserLedgerTransactionHandler()
 
-    def get_mobile_lookup_kyc_details(self, mobile: str, user_id: str) -> Tuple[dict, int]:
+    def get_mobile_lookup_kyc_details(self, mobile: str, user_id: str) -> Tuple[dict, int, float]:
         """
         Get Mobile Lookup details, first checking cache then API.
 
@@ -64,9 +64,11 @@ class MobileLookupHandler:
                 kyc_provider_response=cached_details.kyc_provider_response,
                 status=cached_details.status,
                 is_cached=True,
-                provider_name=KYCProvider.INTERNAL.value
+                provider_name=KYCProvider.INTERNAL.value,
+                confidence_scores=cached_details.confidence_scores
             )
             mobile_lookup_verification_response = cached_details.kyc_provider_response
+            mobile_lookup_verification_response["confidence_scores"] = cached_details.confidence_scores
 
         else:
             # Step 2: If not cached, get from API
@@ -118,6 +120,9 @@ class MobileLookupHandler:
             response, tat = MobileLookupService.call_external_api(mobile)
             external_response = response.json()
 
+            # Calculate confidence scores
+            confidence_scores = self.__determine_total_mobile_confidence_score(external_response)
+            # external_response["confidence_scores"] = confidence_scores
             # Update transaction with response details
             self.kyc_repository.update_kyc_validation_transaction(
                 transaction,
@@ -129,8 +134,12 @@ class MobileLookupHandler:
                 kyc_provider_response=external_response,
                 status=self.__determine_status(response.status_code),
                 is_cached=False,
-                provider_name=KYCProvider.AITAN.value
+                provider_name=KYCProvider.AITAN.value,
+                confidence_scores=confidence_scores
             )
+
+            # Add confidence scores to the response
+            external_response["confidence_scores"] = confidence_scores
             return external_response
 
         except Exception as e:
@@ -158,3 +167,76 @@ class MobileLookupHandler:
             return "TOO_MANY_REQUESTS"
 
         return status
+
+    def __calculate_social_media_score(self, result: dict) -> float:
+        """Calculate social media confidence score."""
+        score = 0.0
+        if isinstance(result.get("whatsapp", {}), dict) and result["whatsapp"].get("registered"):
+            score += 0.4
+        if isinstance(result.get("instagram", {}), dict) and result["instagram"].get("registered"):
+            score += 0.3
+        if isinstance(result.get("facebook", {}), dict) and result["facebook"].get("registered"):
+            score += 0.2
+        if isinstance(result.get("twitter", {}), dict) and result["twitter"].get("registered"):
+            score += 0.1
+        return score
+
+    def __calculate_ecommerce_score(self, result: dict) -> float:
+        """Calculate ecommerce confidence score."""
+        score = 0.0
+        if isinstance(result.get("amazon", {}), dict) and result["amazon"].get("registered"):
+            score += 0.6
+        if isinstance(result.get("flipkart", {}), dict) and result["flipkart"].get("registered"):
+            score += 0.4
+        return score
+
+    def __calculate_payment_score(self, result: dict) -> float:
+        """Calculate payment confidence score."""
+        if isinstance(result.get("paytm", {}), dict) and result["paytm"].get("registered"):
+            return 1.0
+        return 0.0
+
+    def __determine_total_mobile_confidence_score(self, mobile_lookup_response: dict) -> dict:
+        """
+        Determine the total mobile confidence score based on:
+        - Social Media Score = Whatsapp (4/10) + Instagram (3/10) + Facebook (2/10) + Twitter (1/10)
+        - Ecommerce Score = Amazon (3/5) + Flipkart (2/5)
+        - Payment Score = Paytm (1/1)
+        Total Score = (Social Media Score + Ecommerce Score + Payment Score) / 3
+        """
+        try:
+            result = mobile_lookup_response.get("result", {})
+            if not isinstance(result, dict):
+                logger.error(f"Invalid mobile lookup response format. Result is not a dictionary: {result}")
+                return {
+                    "social_media_score": "0.0%",
+                    "ecommerce_score": "0.0%",
+                    "payment_score": "0.0%",
+                    "total_mobile_confidence_score": "0.0%"
+                }
+
+            social_media_score = self.__calculate_social_media_score(result)
+            ecommerce_score = self.__calculate_ecommerce_score(result)
+            payment_score = self.__calculate_payment_score(result)
+
+            total_score = ((social_media_score + ecommerce_score + payment_score) / 3)
+            logger.info(
+                f"Mobile confidence scores - Social Media: {social_media_score}, "
+                f"Ecommerce: {ecommerce_score}, Payment: {payment_score}, "
+                f"Total: {total_score}"
+            )
+
+            return {
+                "social_media_score": f"{round(social_media_score*100, 2)}%",
+                "ecommerce_score": f"{round(ecommerce_score*100, 2)}%",
+                "payment_score": f"{round(payment_score*100, 2)}%",
+                "total_mobile_confidence_score": f"{round(total_score*100, 2)}%"
+            }
+        except Exception as e:
+            logger.error(f"Error calculating mobile confidence score: {str(e)}")
+            return {
+                "social_media_score": "0.0%",
+                "ecommerce_score": "0.0%",
+                "payment_score": "0.0%",
+                "total_mobile_confidence_score": "0.0%"
+            }

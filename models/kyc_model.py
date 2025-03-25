@@ -28,6 +28,7 @@ class KYCValidationTransaction(Document):
     status = StringField(required=True, choices=["FOUND", "NOT_FOUND",
                          "BAD_REQUEST", "TOO_MANY_REQUESTS", "ERROR", "PARTIAL_CONTENT"])
     message = StringField()
+    confidence_scores = DictField()
     kyc_transaction_details = DictField()
     kyc_provider_request = DictField()  # Request payload sent to the provider
     kyc_provider_response = DictField()  # Raw response received from the provider
