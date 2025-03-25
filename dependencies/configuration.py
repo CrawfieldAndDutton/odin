@@ -105,7 +105,7 @@ class KYCServiceBillableStatus:
     KYC_DL = ["FOUND", "NOT_FOUND"]
     KYC_PASSPORT = ["FOUND", "NOT_FOUND"]
     KYC_AADHAAR = ["FOUND", "NOT_FOUND"]
-    MOBILE_LOOKUP = ["FOUND", "NOT_FOUND"]
+    MOBILE_LOOKUP = ["FOUND"]
 
 
 class KYCProvider(BaseEnum):
