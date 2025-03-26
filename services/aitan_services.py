@@ -4,7 +4,7 @@ from requests.models import Response
 
 # Local application imports
 from dependencies.constants import VEHICLE_HEADERS, AITAN_CONSENT_PAYLOAD, PAN_HEADERS
-from dependencies.constants import VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS, AADHAAR_HEADERS
+from dependencies.constants import VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS, AADHAAR_HEADERS, MOBILE_LOOKUP_HEADERS
 from dependencies.configuration import AppConfiguration
 
 from services.base_services import BaseService
@@ -111,3 +111,16 @@ class AadhaarService(BaseService):
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "aadhaar": aadhaar}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_AADHAAR, AADHAAR_HEADERS, payload)
+
+
+class MobileLookupService(BaseService):
+    @staticmethod
+    def call_external_api(
+        mobile: str,
+    ) -> Tuple[Response, float]:
+        """
+        Call external API for mobile lookup.
+        """
+        payload = {**AITAN_CONSENT_PAYLOAD, "mobile": mobile}
+        return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_MOBILE_LOOKUP, MOBILE_LOOKUP_HEADERS,
+                                             payload)

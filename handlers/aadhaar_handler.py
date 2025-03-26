@@ -116,6 +116,7 @@ class AadhaarHandler:
         """
         try:
             # Call external API
+            logger.info(f"Calling Aadhaar API for {aadhaar}")
             response, tat = AadhaarService.call_external_api(aadhaar)
             external_response = response.json()
 

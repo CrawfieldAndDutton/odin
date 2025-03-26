@@ -120,6 +120,7 @@ class DLHandler:
         """
         try:
             # Call external API
+            logger.info(f"Calling DL API for {dl_no} & {dob}")
             response, tat = DLService.call_external_api(dl_no, dob)
             external_response = response.json()
 

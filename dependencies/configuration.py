@@ -25,6 +25,7 @@ class AppConfiguration:
     EXTERNAL_API_URL_DL = os.getenv("EXTERNAL_API_URL_DL")
     EXTERNAL_API_URL_PASSPORT = os.getenv("EXTERNAL_API_URL_PASSPORT")
     EXTERNAL_API_URL_AADHAAR = os.getenv("EXTERNAL_API_URL_AADHAAR")
+    EXTERNAL_API_URL_MOBILE_LOOKUP = os.getenv("EXTERNAL_API_URL_MOBILE_LOOKUP")
     MONGO_URI = os.environ["MONGO_URI"]
     MAIN_DB = os.getenv("MAIN_DB", "kyc_fabric_db")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "YOUR_SECRET_KEY_HERE")  # Change in production!
@@ -59,6 +60,9 @@ class ServicePricing:
     # Business Verification Service Costs
     KYB_GSTIN_COST = float(os.environ["KYB_GSTIN_COST"])
 
+    # Digital Footprint Service Costs
+    MOBILE_LOOKUP_COST = float(os.environ["MOBILE_LOOKUP_COST"])
+
     @classmethod
     def get_service_cost(cls, service_name: str) -> float:
         """Get the cost for a specific service."""
@@ -72,6 +76,7 @@ class ServicePricing:
             UserLedgerTransactionType.EV_EMPLOYMENT_LATEST.value: cls.EV_EMPLOYMENT_LATEST_COST,
             UserLedgerTransactionType.EV_EMPLOYMENT_HISTORY.value: cls.EV_EMPLOYMENT_HISTORY_COST,
             UserLedgerTransactionType.KYB_GSTIN.value: cls.KYB_GSTIN_COST,
+            UserLedgerTransactionType.MOBILE_LOOKUP.value: cls.MOBILE_LOOKUP_COST,
         }
         return cost_mapping.get(service_name, 0.0)
 
@@ -89,6 +94,7 @@ class UserLedgerTransactionType(BaseEnum):
     EV_EMPLOYMENT_LATEST = "EV_EMPLOYMENT_LATEST"
     EV_EMPLOYMENT_HISTORY = "EV_EMPLOYMENT_HISTORY"
     KYB_GSTIN = "KYB_GSTIN"
+    MOBILE_LOOKUP = "MOBILE_LOOKUP"
 
 
 class KYCServiceBillableStatus:
@@ -100,6 +106,7 @@ class KYCServiceBillableStatus:
     KYC_DL = ["FOUND", "NOT_FOUND"]
     KYC_PASSPORT = ["FOUND", "NOT_FOUND"]
     KYC_AADHAAR = ["FOUND", "NOT_FOUND"]
+    MOBILE_LOOKUP = ["FOUND"]
 
 
 class KYCProvider(BaseEnum):

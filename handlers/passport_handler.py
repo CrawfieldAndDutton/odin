@@ -122,6 +122,7 @@ class PassportHandler:
         """
         try:
             # Call external API
+            logger.info(f"Calling Passport API for {file_number} & {dob} & {name}")
             response, tat = PassportService.call_external_api(file_number, dob, name)
             external_response = response.json()
 

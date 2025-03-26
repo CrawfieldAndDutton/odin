@@ -115,6 +115,7 @@ class RCHandler:
         """
         try:
             # Call external API
+            logger.info(f"Calling RC API for {reg_no}")
             response, tat = RCService.call_external_api(reg_no)
             external_response = response.json()
 
