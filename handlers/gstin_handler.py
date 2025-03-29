@@ -128,7 +128,8 @@ class GSTINHandler:
                 kyc_transaction_details={"gstin": gstin},
                 kyc_provider_request={"gstin": gstin},
                 kyc_provider_response=external_response,
-                status=self.__determine_status(response.status_code),
+                status=self.__determine_status(
+                    response.status_code, external_response.get("message", "No message provided")),
                 is_cached=False,
                 provider_name=KYCProvider.AITAN.value
             )
@@ -138,19 +139,24 @@ class GSTINHandler:
             logger.error(f"Error fetching GSTIN {gstin} from API: {str(e)}")
             raise e
 
-    def __determine_status(self, http_status_code: int) -> str:
+    def __determine_status(self, http_status_code: int, message: str) -> str:
         """
         Determine the status of the GSTIN verification.
 
         Args:
             http_status_code: HTTP status code of the API response
-
+            message: Message from the API response
         Returns:
             str: Status of the GSTIN verification
         """
         status = "ERROR"
         if http_status_code == 200:
-            return "FOUND"
+            if message == "GSTIN Found":
+                return "FOUND"
+            elif message == "No Record Found":
+                return "NOT_FOUND"
+            else:
+                return "FOUND"
         elif http_status_code == 206:
             return "NOT_FOUND"
         elif http_status_code == 400:

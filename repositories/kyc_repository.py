@@ -53,13 +53,13 @@ class KYCRepository:
                     kyc_transaction_details__aadhaar=identifier,
                     status__in=kyc_service_billable_status,
                 ).first()
-            elif api_name == UserLedgerTransactionType.MOBILE_LOOKUP.value:
+            elif api_name == UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__mobile=identifier,
                     status__in=kyc_service_billable_status,
                 ).first()
-            elif api_name == UserLedgerTransactionType.GSTIN_LOOKUP.value:
+            elif api_name == UserLedgerTransactionType.KYB_GSTIN.value:
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     kyc_transaction_details__gstin=identifier,

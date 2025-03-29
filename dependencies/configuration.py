@@ -78,7 +78,7 @@ class ServicePricing:
             UserLedgerTransactionType.EV_EMPLOYMENT_LATEST.value: cls.EV_EMPLOYMENT_LATEST_COST,
             UserLedgerTransactionType.EV_EMPLOYMENT_HISTORY.value: cls.EV_EMPLOYMENT_HISTORY_COST,
             UserLedgerTransactionType.KYB_GSTIN.value: cls.KYB_GSTIN_COST,
-            UserLedgerTransactionType.MOBILE_LOOKUP.value: cls.MOBILE_LOOKUP_COST,
+            UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value: cls.MOBILE_LOOKUP_COST,
         }
         return cost_mapping.get(service_name, 0.0)
 
