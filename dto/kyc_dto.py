@@ -48,3 +48,7 @@ class AadhaarVerificationRequest(BaseModel):
 
 class MobileLookupVerificationRequest(BaseModel):
     mobile: str = Field(..., description="Mobile Number to validate")
+
+
+class GSTINVerificationRequest(BaseModel):
+    gstin: str = Field(..., description="GSTIN Number to validate")

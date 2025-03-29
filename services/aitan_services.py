@@ -3,7 +3,7 @@ from typing import Tuple
 from requests.models import Response
 
 # Local application imports
-from dependencies.constants import VEHICLE_HEADERS, AITAN_CONSENT_PAYLOAD, PAN_HEADERS
+from dependencies.constants import VEHICLE_HEADERS, AITAN_CONSENT_PAYLOAD, PAN_HEADERS, GSTIN_HEADERS
 from dependencies.constants import VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS, AADHAAR_HEADERS, MOBILE_LOOKUP_HEADERS
 from dependencies.configuration import AppConfiguration
 
@@ -123,4 +123,17 @@ class MobileLookupService(BaseService):
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "mobile": mobile}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_MOBILE_LOOKUP, MOBILE_LOOKUP_HEADERS,
+                                             payload)
+
+
+class GSTINService(BaseService):
+    @staticmethod
+    def call_external_api(
+        gstin: str,
+    ) -> Tuple[Response, float]:
+        """
+        Call external API for GSTIN verification.
+        """
+        payload = {**AITAN_CONSENT_PAYLOAD, "gstin": gstin}
+        return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_GSTIN_VERIFICATION, GSTIN_HEADERS,
                                              payload)
