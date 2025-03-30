@@ -62,7 +62,7 @@ class ServicePricing:
     KYB_GSTIN_COST = float(os.environ["KYB_GSTIN_COST"])
 
     # Digital Footprint Service Costs
-    MOBILE_LOOKUP_COST = float(os.environ["MOBILE_LOOKUP_COST"])
+    KYC_MOBILE_LOOKUP_COST = float(os.environ["KYC_MOBILE_LOOKUP_COST"])
 
     @classmethod
     def get_service_cost(cls, service_name: str) -> float:
@@ -77,7 +77,7 @@ class ServicePricing:
             UserLedgerTransactionType.EV_EMPLOYMENT_LATEST.value: cls.EV_EMPLOYMENT_LATEST_COST,
             UserLedgerTransactionType.EV_EMPLOYMENT_HISTORY.value: cls.EV_EMPLOYMENT_HISTORY_COST,
             UserLedgerTransactionType.KYB_GSTIN.value: cls.KYB_GSTIN_COST,
-            UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value: cls.MOBILE_LOOKUP_COST,
+            UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value: cls.KYC_MOBILE_LOOKUP_COST,
         }
         return cost_mapping.get(service_name, 0.0)
 

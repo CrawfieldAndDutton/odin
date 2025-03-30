@@ -36,13 +36,13 @@ class MobileLookupHandler:
             dict: Mobile Lookup verification details
         """
         # Check if user has sufficient credits
-        if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.MOBILE_LOOKUP_COST:
+        if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.KYC_MOBILE_LOOKUP_COST:
             logger.error(f"User {user_id} has insufficient credits to verify mobile {mobile}")
             raise InsufficientCreditsException()
 
         transaction = self.kyc_repository.create_kyc_validation_transaction(
             user_id=user_id,
-            api_name=UserLedgerTransactionType.MOBILE_LOOKUP.value,
+            api_name=UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value,
             status="ERROR",
             provider_name=KYCProvider.INTERNAL.value,
             http_status_code=500
@@ -72,9 +72,9 @@ class MobileLookupHandler:
             # Step 2: If not cached, get from API
             mobile_lookup_verification_response = self.__get_mobile_lookup_details_from_api(mobile, transaction)
 
-        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.MOBILE_LOOKUP.value):
+        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value):
             self.user_ledger_transaction_handler.deduct_credits(
-                user_id, UserLedgerTransactionType.MOBILE_LOOKUP.value, f"{transaction.status}|{mobile}")
+                user_id, UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value, f"{transaction.status}|{mobile}")
 
         return mobile_lookup_verification_response, transaction.http_status_code
 
@@ -90,9 +90,9 @@ class MobileLookupHandler:
         """
         try:
             transaction = self.kyc_repository.get_kyc_validation_transaction(
-                api_name=UserLedgerTransactionType.MOBILE_LOOKUP.value,
+                api_name=UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value,
                 identifier=mobile,
-                kyc_service_billable_status=KYCServiceBillableStatus.MOBILE_LOOKUP
+                kyc_service_billable_status=KYCServiceBillableStatus.KYC_MOBILE_LOOKUP
             )
             if transaction and transaction.kyc_provider_response:
                 logger.info(f"Cache hit for Mobile Lookup {mobile}")
