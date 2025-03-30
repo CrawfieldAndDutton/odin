@@ -11,7 +11,7 @@ from dependencies.logger import logger
 from dependencies.exceptions import InsufficientCreditsException
 
 from dto.kyc_dto import PanVerificationRequest, VehicleVerificationRequest
-from dto.kyc_dto import VoterVerificationRequest, DLVerificationRequest, GSTINVerificationRequest
+from dto.kyc_dto import VoterVerificationRequest, DLVerificationRequest
 from dto.kyc_dto import PassportVerificationRequest, AadhaarVerificationRequest, MobileLookupVerificationRequest
 from dto.common_dto import APISuccessResponse
 
@@ -23,7 +23,6 @@ from handlers.dl_handler import DLHandler
 from handlers.passport_handler import PassportHandler
 from handlers.aadhaar_handler import AadhaarHandler
 from handlers.mobile_lookup_handler import MobileLookupHandler
-from handlers.gstin_handler import GSTINHandler
 from models.user_model import User as UserModel
 
 kyc_router = APIRouter(prefix="/api/v1", tags=["KYC Verification API"])
@@ -370,64 +369,6 @@ def verify_mobile(
         )
     except Exception as e:
         logger.error(f"Error in verify_mobile: {str(e)}")
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": str(e)}
-        )
-
-
-@kyc_router.post("/gstin/verify", response_model=APISuccessResponse)
-def verify_gstin(
-    request: GSTINVerificationRequest,
-    user: UserModel = Depends(AuthHandler.get_api_client)
-) -> Union[APISuccessResponse, JSONResponse]:
-    """
-    Verify GSTIN details.
-
-    Args:
-        request: GSTIN verification request
-        user: Authenticated user associated with the API client
-
-    Returns:
-        GSTINVerificationResponse or JSONResponse for error cases
-    """
-    try:
-        gstin_verification_response, http_status_code = GSTINHandler().get_gstin_kyc_details(
-            gstin=request.gstin, user_id=str(user.id)
-        )
-        logger.info(f"GSTIN Verification Response: {gstin_verification_response}")
-        if http_status_code == status.HTTP_206_PARTIAL_CONTENT:
-            return JSONResponse(
-                status_code=http_status_code,
-                content={
-                    "http_status_code": http_status_code,
-                    "message": "GSTIN Verification Successful",
-                    "result": gstin_verification_response.get('message')
-                }
-            )
-
-        if http_status_code != status.HTTP_200_OK:
-            return JSONResponse(
-                status_code=http_status_code,
-                content={
-                    "http_status_code": http_status_code,
-                    "message": "Failure",
-                    "error": gstin_verification_response.get('message')
-                }
-            )
-
-        return APISuccessResponse(
-            http_status_code=http_status_code,
-            message="GSTIN Verification Successful",
-            result=gstin_verification_response,
-        )
-    except InsufficientCreditsException as e:
-        return JSONResponse(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            content={"message": str(e.detail)}
-        )
-    except Exception as e:
-        logger.error(f"Error in verify_gstin: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"message": str(e)}

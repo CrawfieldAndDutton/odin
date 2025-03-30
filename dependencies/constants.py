@@ -48,11 +48,7 @@ MOBILE_LOOKUP_HEADERS = {
     "x-rapidapi-host": "digital-footprint-api1.p.rapidapi.com",
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
-GSTIN_HEADERS = {
-    "Content-Type": CONTENT_TYPE,
-    "x-rapidapi-host": "gst-verification-api1.p.rapidapi.com",
-    "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
-}
+
 AITAN_CONSENT_PAYLOAD = {
     "consent": "yes",
     "consent_text": "I hereby declare my consent agreement for fetching my information via AITAN Labs API",
