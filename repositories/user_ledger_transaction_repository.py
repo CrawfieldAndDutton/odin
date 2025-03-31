@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 
 # Local application imports
 from dependencies.logger import logger
-from dependencies.constants import IST
 
 from models.user_ledger_transaction_model import UserLedgerTransaction
 
@@ -96,7 +95,7 @@ class UserLedgerTransactionRepository:
         """
         try:
             # Calculate the start and end of the current month
-            now = datetime.now(IST)
+            now = datetime.now(timezone.utc)
             start_of_month = datetime(now.year, now.month, 1)
             end_of_month = start_of_month + timedelta(days=32)
             end_of_month = datetime(end_of_month.year, end_of_month.month, 1)
