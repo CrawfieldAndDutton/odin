@@ -165,7 +165,7 @@ class MobileLookupHandler:
 
         return status
 
-    def __calculate_social_media_score(self, result: dict, http_status_code: int) -> float:
+    def __calculate_social_media_score(self, result: dict) -> float:
         """
         Calculate social media confidence score.
 
@@ -175,21 +175,18 @@ class MobileLookupHandler:
         Returns:
             float: social media confidence score
         """
-        if http_status_code == 200:
-            score = 0.0
-            if isinstance(result.get("whatsapp", {}), dict) and result["whatsapp"].get("registered"):
-                score += 0.4
-            if isinstance(result.get("instagram", {}), dict) and result["instagram"].get("registered"):
-                score += 0.3
-            if isinstance(result.get("facebook", {}), dict) and result["facebook"].get("registered"):
-                score += 0.2
-            if isinstance(result.get("twitter", {}), dict) and result["twitter"].get("registered"):
-                score += 0.1
-            return score
-        else:
-            return 0.0
+        score = 0.0
+        if isinstance(result.get("whatsapp", {}), dict) and result["whatsapp"].get("registered"):
+            score += 0.4
+        if isinstance(result.get("instagram", {}), dict) and result["instagram"].get("registered"):
+            score += 0.3
+        if isinstance(result.get("facebook", {}), dict) and result["facebook"].get("registered"):
+            score += 0.2
+        if isinstance(result.get("twitter", {}), dict) and result["twitter"].get("registered"):
+            score += 0.1
+        return score
 
-    def __calculate_ecommerce_score(self, result: dict, http_status_code: int) -> float:
+    def __calculate_ecommerce_score(self, result: dict) -> float:
         """
         Calculate ecommerce confidence score.
 
@@ -199,17 +196,14 @@ class MobileLookupHandler:
         Returns:
             float: ecommerce confidence score
         """
-        if http_status_code == 200:
-            score = 0.0
-            if isinstance(result.get("amazon", {}), dict) and result["amazon"].get("registered"):
-                score += 0.6
-            if isinstance(result.get("flipkart", {}), dict) and result["flipkart"].get("registered"):
-                score += 0.4
-            return score
-        else:
-            return 0.0
+        score = 0.0
+        if isinstance(result.get("amazon", {}), dict) and result["amazon"].get("registered"):
+            score += 0.6
+        if isinstance(result.get("flipkart", {}), dict) and result["flipkart"].get("registered"):
+            score += 0.4
+        return score
 
-    def __calculate_payment_score(self, result: dict, http_status_code: int) -> float:
+    def __calculate_payment_score(self, result: dict) -> float:
         """
         Calculate payment confidence score.
 
@@ -219,12 +213,9 @@ class MobileLookupHandler:
         Returns:
             float: payment confidence score
         """
-        if http_status_code == 200:
-            if isinstance(result.get("paytm", {}), dict) and result["paytm"].get("registered"):
-                return 1.0
-            return 0.0
-        else:
-            return 0.0
+        if isinstance(result.get("paytm", {}), dict) and result["paytm"].get("registered"):
+            return 1.0
+        return 0.0
 
     def __determine_total_mobile_confidence_score(self, mobile_lookup_response: dict, http_status_code: int) -> dict:
         """
@@ -252,9 +243,9 @@ class MobileLookupHandler:
                     "total_mobile_confidence_score": 0.0
                 }
 
-            social_media_score = self.__calculate_social_media_score(result, http_status_code)
-            ecommerce_score = self.__calculate_ecommerce_score(result, http_status_code)
-            payment_score = self.__calculate_payment_score(result, http_status_code)
+            social_media_score = self.__calculate_social_media_score(result)
+            ecommerce_score = self.__calculate_ecommerce_score(result)
+            payment_score = self.__calculate_payment_score(result)
 
             total_score = ((social_media_score + ecommerce_score + payment_score) / 3)
             logger.info(
