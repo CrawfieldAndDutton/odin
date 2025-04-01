@@ -115,6 +115,7 @@ class VoterHandler:
         """
         try:
             # Call external API
+            logger.info(f"Calling Voter API for {epic_no}")
             response, tat = VoterService.call_external_api(epic_no)
             external_response = response.json()
 

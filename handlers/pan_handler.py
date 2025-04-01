@@ -116,6 +116,7 @@ class PanHandler:
         """
         try:
             # Call external API
+            logger.info(f"Calling PAN API for {pan}")
             response, tat = PanService.call_external_api(pan)
             external_response = response.json()
 

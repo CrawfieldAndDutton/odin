@@ -44,3 +44,7 @@ class PassportVerificationRequest(BaseModel):
 
 class AadhaarVerificationRequest(BaseModel):
     aadhaar: str = Field(..., description="Aadhaar Number to validate")
+
+
+class MobileLookupVerificationRequest(BaseModel):
+    mobile: str = Field(..., description="Mobile Number to validate")
