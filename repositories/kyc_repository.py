@@ -59,6 +59,22 @@ class KYCRepository:
                     kyc_transaction_details__mobile=identifier,
                     status__in=kyc_service_billable_status,
                 ).first()
+            elif api_name == UserLedgerTransactionType.EV_EMPLOYMENT_LATEST.value:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    __raw__={
+                        "$or": [
+                            {"kyc_transaction_details.uan": identifier},
+                            {"kyc_transaction_details.pan": identifier},
+                            {"kyc_transaction_details.mobile": identifier},
+                            {"kyc_transaction_details.dob": identifier},
+                            {"kyc_transaction_details.employer_name": identifier},
+                            {"kyc_transaction_details.employee_name": identifier}
+                        ]
+                    },
+                    status__in=kyc_service_billable_status,
+                ).first()
+
         except DoesNotExist:
             return None
         except Exception as e:

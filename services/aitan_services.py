@@ -3,8 +3,14 @@ from typing import Tuple
 from requests.models import Response
 
 # Local application imports
-from dependencies.constants import VEHICLE_HEADERS, AITAN_CONSENT_PAYLOAD, PAN_HEADERS
-from dependencies.constants import VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS, AADHAAR_HEADERS, MOBILE_LOOKUP_HEADERS
+from dependencies.constants import (
+    AITAN_CONSENT_PAYLOAD,
+    EMPLOYMENT_LATEST_CONSENT_PAYLOAD
+)
+from dependencies.constants import (
+    VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS, PAN_HEADERS, VEHICLE_HEADERS,
+    AADHAAR_HEADERS, MOBILE_LOOKUP_HEADERS, EMPLOYMENT_LATEST_HEADERS
+)
 from dependencies.configuration import AppConfiguration
 
 from services.base_services import BaseService
@@ -124,3 +130,29 @@ class MobileLookupService(BaseService):
         payload = {**AITAN_CONSENT_PAYLOAD, "mobile": mobile}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_MOBILE_LOOKUP, MOBILE_LOOKUP_HEADERS,
                                              payload)
+
+
+class EmploymentLatestService(BaseService):
+    @staticmethod
+    def call_external_api(
+        uan: str,
+        pan: str,
+        mobile: str,
+        dob: str,
+        employer_name: str,
+        employee_name: str,
+    ) -> Tuple[Response, float]:
+        """
+        Call external API for employment latest.
+        """
+        payload = {
+            **EMPLOYMENT_LATEST_CONSENT_PAYLOAD,
+            "uan": uan, "pan": pan, "mobile": mobile,
+            "dob": dob, "employer_name": employer_name,
+            "employee_name": employee_name
+        }
+        return BaseService.call_external_api(
+            AppConfiguration.EXTERNAL_API_URL_EMPLOYMENT_LATEST,
+            EMPLOYMENT_LATEST_HEADERS,
+            payload
+        )
