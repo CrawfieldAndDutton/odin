@@ -26,7 +26,7 @@ class KYCValidationTransaction(Document):
     tat = FloatField()
     http_status_code = IntField()
     status = StringField(required=True, choices=["FOUND", "NOT_FOUND",
-                         "BAD_REQUEST", "TOO_MANY_REQUESTS", "ERROR", "PARTIAL_CONTENT"])
+                         "BAD_REQUEST", "TOO_MANY_REQUESTS", "ERROR", "PARTIAL_CONTENT", "SOURCE_DOWN"])
     message = StringField()
     kyc_transaction_details = DictField()
     kyc_provider_request = DictField()  # Request payload sent to the provider

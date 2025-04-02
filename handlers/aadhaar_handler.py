@@ -162,5 +162,7 @@ class AadhaarHandler:
                 status = "ERROR"
         elif http_status_code == 400:
             status = "BAD_REQUEST"
+        elif http_status_code == 503:
+            status = "SOURCE_DOWN"
 
         return status

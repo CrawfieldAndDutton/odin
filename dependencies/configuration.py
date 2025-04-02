@@ -109,6 +109,8 @@ class KYCServiceBillableStatus:
     KYC_AADHAAR = ["FOUND", "NOT_FOUND"]
     KYC_MOBILE_LOOKUP = ["FOUND"]
     KYB_GSTIN = ["FOUND", "NOT_FOUND"]
+    EV_EMPLOYMENT_LATEST = ["FOUND", "NOT_FOUND"]
+    EV_EMPLOYMENT_HISTORY = ["FOUND", "NOT_FOUND"]
 
 
 class KYCProvider(BaseEnum):

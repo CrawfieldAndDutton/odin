@@ -49,13 +49,24 @@ MOBILE_LOOKUP_HEADERS = {
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
 
+EMPLOYMENT_LATEST_HEADERS = {
+    "Content-Type": CONTENT_TYPE,
+    "x-rapidapi-host": "employment-verification.p.rapidapi.com",
+    "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
+}
+
 AITAN_CONSENT_PAYLOAD = {
     "consent": "yes",
     "consent_text": "I hereby declare my consent agreement for fetching my information via AITAN Labs API",
 }
-
+EMPLOYMENT_LATEST_CONSENT_PAYLOAD = {
+    "consent": "yes",
+    "consent_text": "I give my consent to UAN Latest V2 api to check my employment details",
+}
 
 # Calculate expiry time (30 minutes from now)
+
+
 def get_expiry_timestamp():
     return int((datetime.now(IST) + timedelta(minutes=30)).timestamp())
 
