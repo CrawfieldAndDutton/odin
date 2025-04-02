@@ -103,6 +103,12 @@ class EmploymentLatestHandler:
 
         Args:
             uan: UAN number to verify
+            pan: PAN number to verify
+            mobile: Mobile number to verify
+            dob: Date of birth to verify
+            employer_name: Employer name to verify
+            employee_name: Employee name to verify
+
 
         Returns:
             Optional[KYCValidationTransaction]: Cached Employment Latest details or None if not found
@@ -134,6 +140,11 @@ class EmploymentLatestHandler:
 
         Args:
             uan: UAN number to verify
+            pan: PAN number to verify
+            mobile: Mobile number to verify
+            dob: Date of birth to verify
+            employer_name: Employer name to verify
+            employee_name: Employee name to verify
             transaction: KYC validation transaction object
 
         Returns:
