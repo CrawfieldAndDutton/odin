@@ -157,5 +157,7 @@ class RCHandler:
             return "BAD_REQUEST"
         elif http_status_code == 429:
             return "TOO_MANY_REQUESTS"
+        elif http_status_code == 503:
+            return "SOURCE_DOWN"
 
         return status
