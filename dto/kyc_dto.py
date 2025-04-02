@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 # Local application imports
-from dependencies.date_utils import convert_to_dd_mm_yyyy
+from dependencies.date_utils import convert_to_dd_mm_yyyy, convert_to_yyyy_mm_dd
 
 
 class PanVerificationRequest(BaseModel):
@@ -52,9 +52,13 @@ class EmploymentLatestVerificationRequest(BaseModel):
     employer_name: Optional[str] = Field(None, description="Employer Name to validate")
     employee_name: Optional[str] = Field(None, description="Employee Name to validate")
 
-    # @field_validator("dob")
-    # def validate_and_convert_dob(cls, value):
-    #     """
-    #     Validate and convert the dob to yyyy-mm-dd format.
-    #     """
-    #     return convert_to_yyyy_mm_dd(value)
+    @field_validator("dob")
+    def validate_and_convert_dob(cls, value: str | None) -> str | None:
+        """
+            Validate and convert the dob to yyyy-mm-dd format.
+            Only runs if `dob` is a non-empty string.
+            Returns None for empty string or None.
+            """
+        if not value:
+            return None
+        return convert_to_yyyy_mm_dd(value)
