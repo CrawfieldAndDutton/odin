@@ -1,5 +1,5 @@
 # Third-party library imports
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 
 # Local application imports
@@ -62,3 +62,15 @@ class EmploymentLatestVerificationRequest(BaseModel):
         if not value:
             return None
         return convert_to_yyyy_mm_dd(value)
+
+    @model_validator(mode="after")
+    def check_at_least_one_field_provided(cls, values):
+        # Check if all fields are None or empty strings
+        all_empty = all(
+            value is None or (isinstance(value, str) and value.strip() == "")
+            for value in values.model_dump().values()
+        )
+
+        if all_empty:
+            raise ValueError("At least one field must be provided in the request")
+        return values

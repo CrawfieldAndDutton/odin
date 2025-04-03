@@ -241,7 +241,7 @@ class MobileLookupHandler:
                     "social_media_score": 0.0,
                     "ecommerce_score": 0.0,
                     "payment_score": 0.0,
-                    "total_mobile_confidence_score": 0.0
+                    "confidence_score": 0.0
                 }
 
             social_media_score = self.__calculate_social_media_score(result)
@@ -259,12 +259,12 @@ class MobileLookupHandler:
                 "social_media_score": round(social_media_score*100, 2),
                 "ecommerce_score": round(ecommerce_score*100, 2),
                 "payment_score": round(payment_score*100, 2),
-                "total_mobile_confidence_score": round(total_score*100, 2)
+                "confidence_score": round(total_score*100, 2)
             }
         else:
             return {
                 "social_media_score": 0.0,
                 "ecommerce_score": 0.0,
                 "payment_score": 0.0,
-                "total_mobile_confidence_score": 0.0
+                "confidence_score": 0.0
             }
