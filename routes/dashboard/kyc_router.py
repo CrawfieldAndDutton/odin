@@ -24,6 +24,7 @@ from handlers.passport_handler import PassportHandler
 from handlers.aadhaar_handler import AadhaarHandler
 from handlers.mobile_lookup_handler import MobileLookupHandler
 from handlers.employment_latest_handler import EmploymentLatestHandler
+
 from models.user_model import User as UserModel
 
 kyc_router = APIRouter(prefix="/dashboard/api/v1", tags=["KYC Verification API"])
