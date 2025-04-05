@@ -90,7 +90,7 @@ class EmploymentLatestHandler:
         ):
             self.user_ledger_transaction_handler.deduct_credits(
                 user_id, UserLedgerTransactionType.EV_EMPLOYMENT_LATEST.value,
-                f"{transaction.status}|{uan}")
+                f"{transaction.status}|{pan if pan else mobile}",)
 
         return employment_latest_verification_response, transaction.http_status_code
 
