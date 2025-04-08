@@ -46,7 +46,15 @@ def login(form_data: security.OAuth2PasswordRequestForm = Depends()) -> Token:
     Returns:
         Token: Access token and refresh token.
     """
-    return AuthHandler.login_user(form_data)
+    access_token, refresh_token, first_name, last_name, expires_at = AuthHandler.login_user(form_data)
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        first_name=first_name,
+        last_name=last_name,
+        expires_at=expires_at
+    )
 
 
 @auth_router.post("/auth/refresh", response_model=TokenRefresh, tags=["Auth"])
