@@ -27,5 +27,4 @@ class GSTINService(BaseService):
         URL = f"{AppConfiguration.EXTERNAL_API_URL_GSTIN}/{gstin}"
         payload = {}
         GSTIN_HEADERS["User-Agent"] = get_random_user_agent()
-        print(GSTIN_HEADERS)
         return BaseService.call_external_api(URL, GSTIN_HEADERS, payload)
