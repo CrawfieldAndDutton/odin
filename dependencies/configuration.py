@@ -4,7 +4,7 @@ from enum import Enum
 
 # Third-party library imports
 from dotenv import load_dotenv
-
+from typing import Optional
 load_dotenv()
 
 
@@ -27,6 +27,7 @@ class AppConfiguration:
     EXTERNAL_API_URL_AADHAAR = os.getenv("EXTERNAL_API_URL_AADHAAR")
     EXTERNAL_API_URL_MOBILE_LOOKUP = os.getenv("EXTERNAL_API_URL_MOBILE_LOOKUP")
     EXTERNAL_API_URL_EMPLOYMENT_LATEST = os.getenv("EXTERNAL_API_URL_EMPLOYMENT_LATEST")
+    EXTERNAL_API_URL_GSTIN = os.getenv("EXTERNAL_API_URL_GSTIN")
     MONGO_URI = os.environ["MONGO_URI"]
     MAIN_DB = os.getenv("MAIN_DB", "kyc_fabric_db")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "YOUR_SECRET_KEY_HERE")  # Change in production!
@@ -108,9 +109,35 @@ class KYCServiceBillableStatus:
     KYC_PASSPORT = ["FOUND", "NOT_FOUND"]
     KYC_AADHAAR = ["FOUND", "NOT_FOUND"]
     KYC_MOBILE_LOOKUP = ["FOUND"]
-    KYB_GSTIN = ["FOUND", "NOT_FOUND"]
+    KYB_GSTIN = ["FOUND"]
     EV_EMPLOYMENT_LATEST = ["FOUND", "NOT_FOUND"]
     EV_EMPLOYMENT_HISTORY = ["FOUND", "NOT_FOUND"]
+
+
+class KYCRepositoryConfig:
+    """Direct field mappings as class attributes"""
+    KYC_PAN = "pan"
+    KYC_AADHAAR = "aadhaar"
+    KYC_VOTER = "epic_no"
+    KYC_RC = "reg_no"
+    KYC_DL = "dl_no"
+    KYC_PASSPORT = "file_number"
+    KYC_MOBILE_LOOKUP = "mobile"
+    KYB_GSTIN = "gstin"
+
+    # Special cases
+    EV_EMPLOYMENT_LATEST = "EV_EMPLOYMENT_LATEST"
+    EV_EMPLOYMENT_HISTORY = "EV_EMPLOYMENT_HISTORY"
+
+    @classmethod
+    def get_field_name(cls, api_name: str) -> Optional[str]:
+        """Get field name for standard KYC types"""
+        return getattr(cls, api_name, None)
+
+    @classmethod
+    def is_special_case(cls, api_name: str) -> bool:
+        """Check if transaction requires special handling"""
+        return api_name in {cls.EV_EMPLOYMENT_LATEST, cls.EV_EMPLOYMENT_HISTORY}
 
 
 class KYCProvider(BaseEnum):

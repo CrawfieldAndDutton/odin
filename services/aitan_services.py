@@ -26,8 +26,6 @@ class PanService(BaseService):
 
         Args:
             pan: PAN number to verify
-            fastapi_request: FastAPI request object
-            user_id: ID of the user making the request
 
         Returns:
             Tuple containing:
@@ -48,8 +46,6 @@ class RCService(BaseService):
 
         Args:
             reg_no: Vehicle registration number to verify
-            fastapi_request: FastAPI request object
-            user_id: ID of the user making the request
 
         Returns:
             Tuple containing:
@@ -87,7 +83,16 @@ class DLService(BaseService):
         dob: str,
     ) -> Tuple[Response, float]:
         """
-        Call external API for DL verification.
+        Call external API for driving liscence verification.
+
+        Args:
+            dl_no: dl number to verify
+            dob: date of birth to verify
+
+        Returns:
+            Tuple containing:
+                - Response object
+                - Turn around time in seconds
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "dl_no": dl_no, "dob": dob}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_DL, DL_HEADERS, payload)
@@ -102,6 +107,16 @@ class PassportService(BaseService):
     ) -> Tuple[Response, float]:
         """
         Call external API for passport verification.
+
+        Args:
+            file_no: Epic number to verify
+            dob: date of birth to verify
+            name: name to verify
+
+        Returns:
+            Tuple containing:
+                - Response object
+                - Turn around time in seconds
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "file_number": file_number, "dob": dob, "name": name}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_PASSPORT, PASSPORT_HEADERS, payload)
@@ -114,6 +129,14 @@ class AadhaarService(BaseService):
     ) -> Tuple[Response, float]:
         """
         Call external API for aadhaar verification.
+
+        Args:
+            aadhaar: AADHAAR number to verify
+
+        Returns:
+            Tuple containing:
+                - Response object
+                - Turn around time in seconds
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "aadhaar": aadhaar}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_AADHAAR, AADHAAR_HEADERS, payload)
@@ -125,7 +148,15 @@ class MobileLookupService(BaseService):
         mobile: str,
     ) -> Tuple[Response, float]:
         """
-        Call external API for mobile lookup.
+        Call external API for mobile lookup verification.
+
+        Args:
+            mobile: mobile number to verify
+
+        Returns:
+            Tuple containing:
+                - Response object
+                - Turn around time in seconds
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "mobile": mobile}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_MOBILE_LOOKUP, MOBILE_LOOKUP_HEADERS,
@@ -143,7 +174,20 @@ class EmploymentLatestService(BaseService):
         employee_name: str,
     ) -> Tuple[Response, float]:
         """
-        Call external API for employment latest.
+        Call external API for employment latest verification.
+
+        Args:
+            uan: UAN number to verify
+            pan: PAN number to verify
+            mobile: mobile number to verify
+            dob: date of birth to verify
+            employer_name: employer name to verify
+            employee_name: employee name to verify
+
+        Returns:
+            Tuple containing:
+                - Response object
+                - Turn around time in seconds
         """
         payload = {
             **EMPLOYMENT_LATEST_CONSENT_PAYLOAD,

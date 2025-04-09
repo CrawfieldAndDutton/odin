@@ -6,7 +6,7 @@ from mongoengine import DoesNotExist
 
 # Local application imports
 from dependencies.logger import logger
-from dependencies.configuration import UserLedgerTransactionType
+from dependencies.configuration import KYCRepositoryConfig
 
 from models.kyc_model import KYCValidationTransaction
 
@@ -14,52 +14,15 @@ from models.kyc_model import KYCValidationTransaction
 class KYCRepository:
 
     def get_kyc_validation_transaction(
-        self, api_name: str, identifier: str, kyc_service_billable_status: list[str]
+        self,
+        api_name: str,
+        identifier: str,
+        kyc_service_billable_status: list[str]
     ) -> Optional[KYCValidationTransaction]:
+        """Get KYC validation transaction by type and identifier."""
         try:
-            if api_name == UserLedgerTransactionType.KYC_PAN.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__pan=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
-            elif api_name == UserLedgerTransactionType.KYC_RC.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__reg_no=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
-            elif api_name == UserLedgerTransactionType.KYC_VOTER.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__epic_no=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
-            elif api_name == UserLedgerTransactionType.KYC_DL.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__dl_no=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
-            elif api_name == UserLedgerTransactionType.KYC_PASSPORT.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__file_number=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
-            elif api_name == UserLedgerTransactionType.KYC_AADHAAR.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__aadhaar=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
-            elif api_name == UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value:
-                return KYCValidationTransaction.objects(
-                    api_name=api_name,
-                    kyc_transaction_details__mobile=identifier,
-                    status__in=kyc_service_billable_status,
-                ).first()
-            elif api_name == UserLedgerTransactionType.EV_EMPLOYMENT_LATEST.value:
+            # Handle special cases
+            if KYCRepositoryConfig.is_special_case(api_name):
                 return KYCValidationTransaction.objects(
                     api_name=api_name,
                     __raw__={
@@ -75,10 +38,21 @@ class KYCRepository:
                     status__in=kyc_service_billable_status,
                 ).first()
 
+            # Standard KYC case
+            field_name = KYCRepositoryConfig.get_field_name(api_name)
+            if field_name:
+                return KYCValidationTransaction.objects(
+                    api_name=api_name,
+                    **{f'kyc_transaction_details__{field_name}': identifier},
+                    status__in=kyc_service_billable_status,
+                ).first()
+
+            return None
+
         except DoesNotExist:
             return None
         except Exception as e:
-            logger.error(f"Error getting KYC validation transaction {api_name} with {identifier}: {str(e)}")
+            logger.error(f"Error getting KYC transaction {api_name}: {str(e)}")
             raise e
 
     def create_kyc_validation_transaction(
