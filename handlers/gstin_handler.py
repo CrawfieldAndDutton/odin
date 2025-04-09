@@ -119,7 +119,6 @@ class GSTINHandler:
             logger.info(f"Calling GSTIN API for {gstin}")
             response, tat = GSTINService.call_external_api(gstin)
             external_response = GSTINScraper.extract_gst_data(response, gstin)
-            print(external_response)
 
             # Update transaction with response details
             self.kyc_repository.update_kyc_validation_transaction(
