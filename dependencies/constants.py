@@ -1,12 +1,30 @@
+import json
+import random
+from pathlib import Path
 from pytz import timezone
 from datetime import datetime, timedelta
 
 from dependencies.configuration import AppConfiguration
+from dependencies.logger import logger
 
 # Define IST timezone
 IST = timezone('Asia/Kolkata')
 
 CONTENT_TYPE = "application/json"
+
+JSON_PATH = Path(__file__).parent / "scraper_utils.json"
+logger.info(f"Loading user agents from {JSON_PATH}")
+
+with open(JSON_PATH, 'r') as f:
+    USER_AGENTS = json.load(f)["USER_AGENTS"]
+
+
+def get_random_user_agent() -> str:
+    """
+    Generate a random User-Agent string.
+    """
+    return random.choice(USER_AGENTS)
+
 
 PAN_HEADERS = {
     "Content-Type": CONTENT_TYPE,
@@ -54,6 +72,24 @@ EMPLOYMENT_LATEST_HEADERS = {
     "x-rapidapi-host": "employment-verification.p.rapidapi.com",
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
+
+GSTIN_HEADERS = {
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'accept-language': 'en-GB,en;q=0.7',
+    'cache-control': 'no-cache',
+    'pragma': 'no-cache',
+    'priority': 'u=0, i',
+    'sec-ch-ua': '"Not(A:Brand";v="99", "Brave";v="133", "Chromium";v="133"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"macOS"',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-user': '?1',
+    'sec-gpc': '1',
+    'upgrade-insecure-requests': '1',
+}
+
 
 AITAN_CONSENT_PAYLOAD = {
     "consent": "yes",

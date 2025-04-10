@@ -254,20 +254,18 @@ class AuthHandler:
                 detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-
         user.is_active = True
         user.save()
-
         access_token_expires = timedelta(minutes=AppConfiguration.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = AuthHandler.create_access_token(subject=str(user.id), expires_delta=access_token_expires)
         refresh_token, _ = AuthHandler.create_refresh_token(user_id=str(user.id))
-
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-            "expires_at": datetime.now(IST) + access_token_expires
-        }
+        first_name = user.first_name if user.first_name else ""
+        last_name = user.last_name if user.last_name else ""
+        expires_at = datetime.now(IST) + access_token_expires
+        logger.info(
+            f"User with {user.username} {access_token} {refresh_token}"
+            f"{first_name} {last_name} {expires_at} logged in successfully")
+        return access_token, refresh_token, first_name, last_name, expires_at
 
     @staticmethod
     def refresh_user_token(token_data: RefreshTokenRequest) -> TokenRefresh:

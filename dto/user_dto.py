@@ -48,6 +48,8 @@ class Token(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
+    first_name: str
+    last_name: str
     expires_at: datetime
 
 

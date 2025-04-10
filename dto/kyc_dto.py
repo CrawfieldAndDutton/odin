@@ -74,3 +74,7 @@ class EmploymentLatestVerificationRequest(BaseModel):
         if all_empty:
             raise ValueError("At least one field must be provided in the request")
         return values
+
+
+class GSTINVerificationRequest(BaseModel):
+    gstin: str = Field(..., description="GSTIN Number to validate")
