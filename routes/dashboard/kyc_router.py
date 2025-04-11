@@ -13,6 +13,7 @@ from dependencies.exceptions import InsufficientCreditsException
 from dto.kyc_dto import PanVerificationRequest, VehicleVerificationRequest, GSTINVerificationRequest
 from dto.kyc_dto import VoterVerificationRequest, DLVerificationRequest, PassportVerificationRequest
 from dto.kyc_dto import AadhaarVerificationRequest, MobileLookupVerificationRequest, EmploymentLatestVerificationRequest
+from dto.kyc_dto import EmailLookupVerificationRequest
 from dto.common_dto import APISuccessResponse
 
 from handlers.auth_handlers import AuthHandler
@@ -23,6 +24,7 @@ from handlers.dl_handler import DLHandler
 from handlers.passport_handler import PassportHandler
 from handlers.aadhaar_handler import AadhaarHandler
 from handlers.mobile_lookup_handler import MobileLookupHandler
+from handlers.email_lookup_handler import EmailLookupHandler
 from handlers.employment_latest_handler import EmploymentLatestHandler
 from handlers.gstin_handler import GSTINHandler
 
@@ -382,6 +384,55 @@ def verify_mobile(
         )
     except Exception as e:
         logger.error(f"Error in verify_mobile: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"message": str(e)}
+        )
+
+
+@kyc_router.post("/email-lookup/verify", response_model=APISuccessResponse)
+def verify_email(
+    request: EmailLookupVerificationRequest,
+    user: UserModel = Depends(AuthHandler.get_current_active_user)
+) -> Union[APISuccessResponse, JSONResponse]:
+    """
+    Verify email details.
+
+    Args:
+        request: Email lookup verification request
+        user: Authenticated user
+
+    Returns:
+        EmailLookupVerificationResponse or JSONResponse for error cases
+    """
+    try:
+        email_lookup_verification_response, http_status_code = EmailLookupHandler().get_email_lookup_kyc_details(
+            email=request.email, user_id=str(user.id)
+        )
+        logger.info(f"EMAIL LOOKUP Verification Response: {email_lookup_verification_response}")
+
+        if http_status_code != status.HTTP_200_OK:
+            return JSONResponse(
+                status_code=http_status_code,
+                content={
+                    "http_status_code": http_status_code,
+                    "message": "Failure",
+                    "error": email_lookup_verification_response.get('message')
+                }
+            )
+
+        return APISuccessResponse(
+            http_status_code=http_status_code,
+            message="EMAIL LOOKUP Verification Successful",
+            result=email_lookup_verification_response,
+        )
+    except InsufficientCreditsException as e:
+        return JSONResponse(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            content={"message": str(e.detail)}
+        )
+    except Exception as e:
+        logger.error(f"Error in verify_email: {str(e)}")
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"message": str(e)}

@@ -67,6 +67,12 @@ MOBILE_LOOKUP_HEADERS = {
     "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
 }
 
+EMAIL_LOOKUP_HEADERS = {
+    "Content-Type": CONTENT_TYPE,
+    "x-rapidapi-host": "digital-footprint-api1.p.rapidapi.com",
+    "x-rapidapi-key": AppConfiguration.RAPID_API_KEY,
+}
+
 EMPLOYMENT_LATEST_HEADERS = {
     "Content-Type": CONTENT_TYPE,
     "x-rapidapi-host": "employment-verification.p.rapidapi.com",
