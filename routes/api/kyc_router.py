@@ -10,10 +10,10 @@ from fastapi.responses import JSONResponse
 from dependencies.logger import logger
 from dependencies.exceptions import InsufficientCreditsException
 
-from dto.kyc_dto import PanVerificationRequest, VehicleVerificationRequest, GSTINVerificationRequest
-from dto.kyc_dto import VoterVerificationRequest, DLVerificationRequest, EmploymentLatestVerificationRequest
-from dto.kyc_dto import PassportVerificationRequest, AadhaarVerificationRequest, MobileLookupVerificationRequest
-from dto.kyc_dto import EmailLookupVerificationRequest
+from dto.kyc_dto import (PassportVerificationRequest, AadhaarVerificationRequest, MobileLookupVerificationRequest,
+                         EmailLookupVerificationRequest, VoterVerificationRequest, DLVerificationRequest, 
+                         EmploymentLatestVerificationRequest, PanVerificationRequest, VehicleVerificationRequest, 
+                         GSTINVerificationRequest)
 from dto.common_dto import APISuccessResponse
 
 from handlers.auth_handlers import AuthHandler
