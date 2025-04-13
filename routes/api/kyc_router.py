@@ -11,8 +11,8 @@ from dependencies.logger import logger
 from dependencies.exceptions import InsufficientCreditsException
 
 from dto.kyc_dto import (PassportVerificationRequest, AadhaarVerificationRequest, MobileLookupVerificationRequest,
-                         EmailLookupVerificationRequest, VoterVerificationRequest, DLVerificationRequest, 
-                         EmploymentLatestVerificationRequest, PanVerificationRequest, VehicleVerificationRequest, 
+                         EmailLookupVerificationRequest, VoterVerificationRequest, DLVerificationRequest,
+                         EmploymentLatestVerificationRequest, PanVerificationRequest, VehicleVerificationRequest,
                          GSTINVerificationRequest)
 from dto.common_dto import APISuccessResponse
 
