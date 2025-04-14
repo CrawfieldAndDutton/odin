@@ -44,6 +44,10 @@ class MobileLookupVerificationRequest(BaseModel):
     mobile: str = Field(..., description="Mobile Number to validate")
 
 
+class EmailLookupVerificationRequest(BaseModel):
+    email: str = Field(..., description="Email ID to validate")
+
+
 class EmploymentLatestVerificationRequest(BaseModel):
     uan: Optional[str] = Field(None, description="UAN Number to validate")
     pan: Optional[str] = Field(None, description="PAN Number to validate")

@@ -9,7 +9,7 @@ from dependencies.constants import (
 )
 from dependencies.constants import (
     VOTER_HEADERS, DL_HEADERS, PASSPORT_HEADERS, PAN_HEADERS, VEHICLE_HEADERS,
-    AADHAAR_HEADERS, MOBILE_LOOKUP_HEADERS, EMPLOYMENT_LATEST_HEADERS
+    AADHAAR_HEADERS, MOBILE_LOOKUP_HEADERS, EMAIL_LOOKUP_HEADERS, EMPLOYMENT_LATEST_HEADERS
 )
 from dependencies.configuration import AppConfiguration
 
@@ -160,6 +160,27 @@ class MobileLookupService(BaseService):
         """
         payload = {**AITAN_CONSENT_PAYLOAD, "mobile": mobile}
         return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_MOBILE_LOOKUP, MOBILE_LOOKUP_HEADERS,
+                                             payload)
+
+
+class EmailLookupService(BaseService):
+    @staticmethod
+    def call_external_api(
+        email: str,
+    ) -> Tuple[Response, float]:
+        """
+        Call external API for email lookup verification.
+
+        Args:
+            email: email id to verify
+
+        Returns:
+            Tuple containing:
+                - Response object
+                - Turn around time in seconds
+        """
+        payload = {**AITAN_CONSENT_PAYLOAD, "email": email}
+        return BaseService.call_external_api(AppConfiguration.EXTERNAL_API_URL_EMAIL_LOOKUP, EMAIL_LOOKUP_HEADERS,
                                              payload)
 
 
