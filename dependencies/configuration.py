@@ -150,6 +150,7 @@ class KYCProvider(BaseEnum):
 
     AITAN = "AITAN"
     INTERNAL = "INTERNAL"
+    SCRAPPER = "SCRAPPER"
 
 
 class RazorpayConfiguration:

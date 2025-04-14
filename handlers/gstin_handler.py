@@ -131,7 +131,7 @@ class GSTINHandler:
                 kyc_provider_response=external_response,
                 status=self.__determine_status(response.status_code),
                 is_cached=False,
-                provider_name=KYCProvider.AITAN.value
+                provider_name=KYCProvider.SCRAPPER.value
             )
             return external_response
 
