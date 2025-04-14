@@ -26,6 +26,7 @@ class AppConfiguration:
     EXTERNAL_API_URL_PASSPORT = os.getenv("EXTERNAL_API_URL_PASSPORT")
     EXTERNAL_API_URL_AADHAAR = os.getenv("EXTERNAL_API_URL_AADHAAR")
     EXTERNAL_API_URL_MOBILE_LOOKUP = os.getenv("EXTERNAL_API_URL_MOBILE_LOOKUP")
+    EXTERNAL_API_URL_EMAIL_LOOKUP = os.getenv("EXTERNAL_API_URL_EMAIL_LOOKUP")
     EXTERNAL_API_URL_EMPLOYMENT_LATEST = os.getenv("EXTERNAL_API_URL_EMPLOYMENT_LATEST")
     EXTERNAL_API_URL_GSTIN = os.getenv("EXTERNAL_API_URL_GSTIN")
     MONGO_URI = os.environ["MONGO_URI"]
@@ -64,6 +65,7 @@ class ServicePricing:
 
     # Digital Footprint Service Costs
     KYC_MOBILE_LOOKUP_COST = float(os.environ["KYC_MOBILE_LOOKUP_COST"])
+    KYC_EMAIL_LOOKUP_COST = float(os.environ["KYC_EMAIL_LOOKUP_COST"])
 
     @classmethod
     def get_service_cost(cls, service_name: str) -> float:
@@ -97,6 +99,7 @@ class UserLedgerTransactionType(BaseEnum):
     EV_EMPLOYMENT_HISTORY = "EV_EMPLOYMENT_HISTORY"
     KYB_GSTIN = "KYB_GSTIN"
     KYC_MOBILE_LOOKUP = "KYC_MOBILE_LOOKUP"
+    KYC_EMAIL_LOOKUP = "KYC_EMAIL_LOOKUP"
 
 
 class KYCServiceBillableStatus:
@@ -109,6 +112,7 @@ class KYCServiceBillableStatus:
     KYC_PASSPORT = ["FOUND", "NOT_FOUND"]
     KYC_AADHAAR = ["FOUND", "NOT_FOUND"]
     KYC_MOBILE_LOOKUP = ["FOUND"]
+    KYC_EMAIL_LOOKUP = ["FOUND"]
     KYB_GSTIN = ["FOUND"]
     EV_EMPLOYMENT_LATEST = ["FOUND", "NOT_FOUND"]
     EV_EMPLOYMENT_HISTORY = ["FOUND", "NOT_FOUND"]
@@ -123,6 +127,7 @@ class KYCRepositoryConfig:
     KYC_DL = "dl_no"
     KYC_PASSPORT = "file_number"
     KYC_MOBILE_LOOKUP = "mobile"
+    KYC_EMAIL_LOOKUP = "email"
     KYB_GSTIN = "gstin"
 
     # Special cases
