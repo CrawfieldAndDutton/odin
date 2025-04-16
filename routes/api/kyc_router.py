@@ -438,7 +438,7 @@ def verify_employment_latest(
 
     Args:
         request: Employment latest verification request
-        user: Authenticated user
+        user: Authenticated user with API client
 
     Returns:
         EmploymentLatestVerificationResponse or JSONResponse for error cases
@@ -495,7 +495,7 @@ def verify_gstin(
 
     Args:
         request: GSTIN verification request
-        user: Authenticated user
+        user: Authenticated user with API client
 
     Returns:
         GSTINVerificationResponse or JSONResponse for error cases
