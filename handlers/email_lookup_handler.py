@@ -29,11 +29,11 @@ class EmailLookupHandler:
         Get Email Lookup details, first checking cache then API.
 
         Args:
-            mobile: mobile number to verify
+            email: email number to verify
             user_id: ID of the user making the request
 
         Returns:
-            dict: Mobile Lookup verification details
+            dict: Email Lookup verification details
         """
         # Check if user has sufficient credits
         if self.user_repository.get_user_by_id(user_id).credits < ServicePricing.KYC_EMAIL_LOOKUP_COST:
@@ -72,7 +72,7 @@ class EmailLookupHandler:
             # Step 2: If not cached, get from API
             email_lookup_verification_response = self.__get_email_lookup_details_from_api(email, transaction)
 
-        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_MOBILE_LOOKUP.value):
+        if transaction.status in getattr(KYCServiceBillableStatus, UserLedgerTransactionType.KYC_EMAIL_LOOKUP.value):
             self.user_ledger_transaction_handler.deduct_credits(
                 user_id, UserLedgerTransactionType.KYC_EMAIL_LOOKUP.value, f"{transaction.status}|{email}")
 
@@ -145,13 +145,13 @@ class EmailLookupHandler:
 
     def __determine_status(self, http_status_code: int) -> str:
         """
-        Determine the status of the Mobile Lookup verification.
+        Determine the status of the Email Lookup verification.
 
         Args:
             http_status_code: HTTP status code of the API response
 
         Returns:
-            str: Status of the Mobile Lookup verification
+            str: Status of the Email Lookup verification
         """
         status = "ERROR"
         if http_status_code == 200:
@@ -171,7 +171,7 @@ class EmailLookupHandler:
         Calculate social media confidence score.
 
         Args:
-            result: result from Mobile Lookup API
+            result: result from Email Lookup API
 
         Returns:
             float: social media confidence score
