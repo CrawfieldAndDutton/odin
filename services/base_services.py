@@ -1,4 +1,5 @@
 # Standard library imports
+import time
 from abc import ABC
 from datetime import datetime
 from typing import Dict, Any, Tuple
@@ -30,7 +31,11 @@ class BaseService(ABC):
         return (end_time - start_time).total_seconds()
 
     @staticmethod
-    def call_external_api(url: str, headers: Dict[str, str], payload: Dict[str, Any]) -> Tuple[Response, float]:
+    def call_external_api(url: str,
+                          headers: Dict[str, str],
+                          payload: Dict[str, Any],
+                          max_retries=3,
+                          delay=1) -> Tuple[Response, float]:
         """
         Generic function to call an external API and calculate turnaround time.
 
@@ -47,8 +52,12 @@ class BaseService(ABC):
         start_time = datetime.now()
 
         logger.info(f"Calling external API: {url}")
-        response = requests.post(url, json=payload, headers=headers)
-
+        for attempt in range(max_retries):
+            response = requests.post(url, json=payload, headers=headers)
+            if response.status_code not in [500, 501, 502, 503, 504]:
+                break
+            time.sleep(delay)
+            logger.warning(f"Attempt {attempt + 1} failed, retrying...")
         end_time = datetime.now()
         tat = BaseService.calculate_tat(start_time, end_time)
         return response, tat
