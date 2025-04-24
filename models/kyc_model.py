@@ -21,7 +21,7 @@ class KYCValidationTransaction(Document):
 
     # API and Provider Details
     api_name = StringField(required=True)
-    provider_name = StringField(required=True, choices=["AITAN", "INTERNAL"])
+    provider_name = StringField(required=True, choices=["AITAN", "INTERNAL", "SCRAPPER"])
     is_cached = BooleanField(default=False)
     tat = FloatField()
     http_status_code = IntField()
