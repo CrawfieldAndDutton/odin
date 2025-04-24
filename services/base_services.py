@@ -54,7 +54,7 @@ class BaseService(ABC):
         logger.info(f"Calling external API: {url}")
         for attempt in range(max_retries):
             response = requests.post(url, json=payload, headers=headers)
-            if response.status_code not in [500, 501, 502, 503, 504]:
+            if not (500 <= response.status_code < 600):
                 break
             time.sleep(delay)
             logger.warning(f"Attempt {attempt + 1} failed, retrying...")
